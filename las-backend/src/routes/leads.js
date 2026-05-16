@@ -1,41 +1,41 @@
 import { Router } from "express";
-import { supabase } from "../config/supabase.js";
+import Lead from "../models/Lead.js";
+import LeadActivity from "../models/LeadActivity.js";
 import {
   createLeadSchema,
   updateLeadSchema,
   leadQuerySchema,
 } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
+router.use(requireAuth);
+
 // ─── GET /api/leads ───────────────────────────────────────────────────────────
-// Fetch all leads with pagination, filtering, and search
 router.get("/", validate(leadQuerySchema, "query"), async (req, res, next) => {
   try {
-    const { page, limit, status, client_id, search } = req.query;
-    const offset = (page - 1) * limit;
+    const { page, limit, status, clientId, search } = req.query;
+    const skip = (page - 1) * limit;
 
-    let query = supabase
-      .from("leads")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    const filter = {};
+    if (status) filter.status = status;
+    if (clientId) filter.clientId = clientId;
+    if (search) filter.email = { $regex: search, $options: "i" };
 
-    if (status) query = query.eq("status", status);
-    if (client_id) query = query.eq("client_id", client_id);
-    if (search) query = query.ilike("email", `%${search}%`);
-
-    const { data, error, count } = await query;
-    if (error) throw error;
+    const [data, total] = await Promise.all([
+      Lead.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Lead.countDocuments(filter),
+    ]);
 
     res.json({
       data,
       meta: {
-        total: count,
+        total,
         page,
         limit,
-        totalPages: Math.ceil(count / limit),
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (err) {
@@ -46,16 +46,12 @@ router.get("/", validate(leadQuerySchema, "query"), async (req, res, next) => {
 // ─── GET /api/leads/:id ───────────────────────────────────────────────────────
 router.get("/:id", async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*, lead_activities(*)")
-      .eq("id", req.params.id)
-      .single();
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) return res.status(404).json({ message: "Lead not found" });
 
-    if (error) throw error;
-    if (!data) return res.status(404).json({ message: "Lead not found" });
+    const activities = await LeadActivity.find({ leadId: lead._id }).sort({ createdAt: -1 });
 
-    res.json({ data });
+    res.json({ data: { ...lead.toObject(), leadActivities: activities } });
   } catch (err) {
     next(err);
   }
@@ -64,17 +60,8 @@ router.get("/:id", async (req, res, next) => {
 // ─── POST /api/leads ──────────────────────────────────────────────────────────
 router.post("/", validate(createLeadSchema), async (req, res, next) => {
   try {
-    const payload = req.body;
-
-    const { data, error } = await supabase
-      .from("leads")
-      .insert({ ...payload, status: "new", score: 0 })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    res.status(201).json({ data, message: "Lead created successfully" });
+    const lead = await new Lead({ ...req.body, status: "new", score: 0 }).save();
+    res.status(201).json({ data: lead, message: "Lead created successfully" });
   } catch (err) {
     next(err);
   }
@@ -83,17 +70,9 @@ router.post("/", validate(createLeadSchema), async (req, res, next) => {
 // ─── PATCH /api/leads/:id ─────────────────────────────────────────────────────
 router.patch("/:id", validate(updateLeadSchema), async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from("leads")
-      .update(req.body)
-      .eq("id", req.params.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    if (!data) return res.status(404).json({ message: "Lead not found" });
-
-    res.json({ data, message: "Lead updated successfully" });
+    const lead = await Lead.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!lead) return res.status(404).json({ message: "Lead not found" });
+    res.json({ data: lead, message: "Lead updated successfully" });
   } catch (err) {
     next(err);
   }
@@ -102,13 +81,8 @@ router.patch("/:id", validate(updateLeadSchema), async (req, res, next) => {
 // ─── DELETE /api/leads/:id ────────────────────────────────────────────────────
 router.delete("/:id", async (req, res, next) => {
   try {
-    const { error } = await supabase
-      .from("leads")
-      .delete()
-      .eq("id", req.params.id);
-
-    if (error) throw error;
-
+    const lead = await Lead.findByIdAndDelete(req.params.id);
+    if (!lead) return res.status(404).json({ message: "Lead not found" });
     res.json({ message: "Lead deleted successfully" });
   } catch (err) {
     next(err);

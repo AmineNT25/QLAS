@@ -3,16 +3,16 @@
 import { useRouter } from 'next/navigation'
 
 export interface Lead {
-  id: string
+  _id: string
   email: string
-  full_name: string | null
+  fullName: string | null
   status: string
   score: number
   source: string | null
-  created_at: string
+  createdAt: string
 }
 
-type SortKey = 'email' | 'status' | 'score' | 'created_at'
+type SortKey = 'email' | 'status' | 'score' | 'createdAt'
 
 interface Props {
   leads: Lead[]
@@ -38,10 +38,10 @@ export default function LeadsTable({ leads, sortKey, sortDir, onSort }: Props) {
   const router = useRouter()
 
   const cols: { key: SortKey; label: string }[] = [
-    { key: 'email',      label: 'Email'      },
-    { key: 'status',     label: 'Status'     },
-    { key: 'score',      label: 'Score'      },
-    { key: 'created_at', label: 'Created At' },
+    { key: 'email',     label: 'Email'      },
+    { key: 'status',    label: 'Status'     },
+    { key: 'score',     label: 'Score'      },
+    { key: 'createdAt', label: 'Created At' },
   ]
 
   return (
@@ -77,12 +77,12 @@ export default function LeadsTable({ leads, sortKey, sortDir, onSort }: Props) {
           ) : (
             leads.map((lead) => (
               <tr
-                key={lead.id}
+                key={lead._id}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
+                onClick={() => router.push(`/dashboard/leads/${lead._id}`)}
               >
                 <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
-                  {lead.full_name ?? '—'}
+                  {lead.fullName ?? '—'}
                 </td>
                 <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                   {lead.email}
@@ -103,7 +103,7 @@ export default function LeadsTable({ leads, sortKey, sortDir, onSort }: Props) {
                   {lead.source ?? '—'}
                 </td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap tabular-nums text-xs">
-                  {new Date(lead.created_at).toLocaleDateString('en-US', {
+                  {new Date(lead.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',

@@ -1,20 +1,30 @@
 import { z } from "zod";
 
-// ─── Lead Schema ──────────────────────────────────────────────────────────────
-export const createLeadSchema = z.object({
-  client_id: z.string().uuid("Invalid client_id"),
-  form_id: z.string().uuid("Invalid form_id"),
+// ─── Auth Schemas ─────────────────────────────────────────────────────────────
+export const registerSchema = z.object({
+  full_name: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
-  full_name: z.string().min(1, "Full name is required").optional(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// ─── Lead Schemas ─────────────────────────────────────────────────────────────
+export const createLeadSchema = z.object({
+  clientId: z.string().min(1, "clientId is required"),
+  formId: z.string().optional(),
+  email: z.string().email("Invalid email address"),
+  fullName: z.string().min(1, "Full name is required").optional(),
   phone: z.string().optional(),
   source: z.string().optional(),
-  // UTM tracking
-  utm_source: z.string().optional(),
-  utm_medium: z.string().optional(),
-  utm_campaign: z.string().optional(),
-  utm_term: z.string().optional(),
-  utm_content: z.string().optional(),
-  // Arbitrary extra fields captured from the form
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmTerm: z.string().optional(),
+  utmContent: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 
@@ -23,7 +33,7 @@ export const updateLeadSchema = z.object({
     .enum(["new", "contacted", "qualified", "converted", "lost"])
     .optional(),
   score: z.number().int().min(0).max(100).optional(),
-  full_name: z.string().min(1).optional(),
+  fullName: z.string().min(1).optional(),
   phone: z.string().optional(),
 });
 
@@ -39,17 +49,17 @@ export const leadQuerySchema = z.object({
   status: z
     .enum(["new", "contacted", "qualified", "converted", "lost"])
     .optional(),
-  client_id: z.string().uuid().optional(),
+  clientId: z.string().optional(),
   search: z.string().optional(),
 });
 
 // ─── Form Submission Schema ───────────────────────────────────────────────────
 export const formSubmitSchema = z.object({
   email: z.string().email("Invalid email address"),
-  full_name: z.string().optional(),
+  fullName: z.string().optional(),
   phone: z.string().optional(),
-  utm_source: z.string().optional(),
-  utm_medium: z.string().optional(),
-  utm_campaign: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });

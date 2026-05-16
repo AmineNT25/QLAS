@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import axios from 'axios'
+import Cookies from 'js-cookie'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,17 +20,21 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      setError('Invalid email or password.')
+    try {
+      const { data } = await axios.post(`${API_URL}/api/auth/login`, { email, password })
+      localStorage.setItem('access_token', data.accessToken)
+      localStorage.setItem('refresh_token', data.refreshToken)
+      Cookies.set('access_token', data.accessToken, { expires: 1 })
+      router.push('/dashboard')
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.message
+          ? err.response.data.message
+          : 'Invalid email or password.'
+      setError(message)
+    } finally {
       setLoading(false)
-      return
     }
-
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (

@@ -4,15 +4,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LeadsTable, { type Lead } from '@/components/leads/LeadsTable'
 import LeadsFilters from '@/components/leads/LeadsFilters'
+import api from '@/lib/api'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const PAGE_SIZE = 20
 
-type SortKey = 'email' | 'status' | 'score' | 'created_at'
+type SortKey = 'email' | 'status' | 'score' | 'createdAt'
 
 interface ApiResponse {
   data: Lead[]
-  total: number
+  meta: { total: number; page: number; limit: number; totalPages: number }
 }
 
 export default function LeadsPage() {
@@ -26,7 +26,7 @@ export default function LeadsPage() {
 
   const search  = params.get('search')  ?? ''
   const status  = params.get('status')  ?? ''
-  const sortKey = (params.get('sort')   ?? 'created_at') as SortKey
+  const sortKey = (params.get('sort')   ?? 'createdAt') as SortKey
   const sortDir = (params.get('dir')    ?? 'desc') as 'asc' | 'desc'
   const page    = Number(params.get('page') ?? '1')
 
@@ -42,15 +42,8 @@ export default function LeadsPage() {
     [params, router],
   )
 
-  const handleSearch = useCallback(
-    (v: string) => pushParam({ search: v, page: '1' }),
-    [pushParam],
-  )
-
-  const handleStatus = useCallback(
-    (v: string) => pushParam({ status: v, page: '1' }),
-    [pushParam],
-  )
+  const handleSearch = useCallback((v: string) => pushParam({ search: v, page: '1' }), [pushParam])
+  const handleStatus = useCallback((v: string) => pushParam({ status: v, page: '1' }), [pushParam])
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -60,33 +53,22 @@ export default function LeadsPage() {
     [sortKey, sortDir, pushParam],
   )
 
-  const handlePage = useCallback(
-    (p: number) => pushParam({ page: String(p) }),
-    [pushParam],
-  )
+  const handlePage = useCallback((p: number) => pushParam({ page: String(p) }), [pushParam])
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
 
-    const qs = new URLSearchParams()
-    if (search) qs.set('search', search)
-    if (status) qs.set('status', status)
-    qs.set('sort',  sortKey)
-    qs.set('dir',   sortDir)
-    qs.set('page',  String(page))
-    qs.set('limit', String(PAGE_SIZE))
+    const qs: Record<string, string> = { page: String(page), limit: String(PAGE_SIZE) }
+    if (search) qs.search = search
+    if (status) qs.status = status
 
-    fetch(`${API_URL}/api/leads?${qs.toString()}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`Server error ${r.status}`)
-        return r.json() as Promise<ApiResponse>
-      })
-      .then(({ data, total: t }) => {
+    api.get('/api/leads', { params: qs })
+      .then(({ data }: { data: ApiResponse }) => {
         if (!cancelled) {
-          setLeads(data)
-          setTotal(t)
+          setLeads(data.data)
+          setTotal(data.meta.total)
         }
       })
       .catch((e: Error) => {
@@ -132,7 +114,6 @@ export default function LeadsPage() {
         />
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <button
