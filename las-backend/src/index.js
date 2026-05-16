@@ -4,8 +4,10 @@ import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
 
+import { connectDB } from "./config/db.js";
 import leadsRouter from "./routes/leads.js";
 import formsRouter from "./routes/forms.js";
+import authRouter from "./routes/auth.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 
@@ -27,6 +29,7 @@ app.get("/health", (_req, res) => {
 });
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+app.use("/api/auth", authRouter);
 app.use("/api/leads", leadsRouter);
 app.use("/api/forms", formsRouter);
 
@@ -34,8 +37,10 @@ app.use("/api/forms", formsRouter);
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 LAS API running on port ${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`LAS API running on port ${PORT}`);
+  });
 });
 
 export default app;

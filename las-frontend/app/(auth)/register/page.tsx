@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import axios from 'axios'
+import Cookies from 'js-cookie'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -18,36 +21,30 @@ export default function RegisterPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
-
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
-
-    if (signUpError) {
-      setError(signUpError.message.includes('already')
-        ? 'An account with this email already exists.'
-        : signUpError.message)
-      setLoading(false)
-      return
-    }
-
-    const userId = data.user?.id
-    if (userId) {
-      const { error: insertError } = await supabase.from('users').insert({
-        id: userId,
-        email,
+    try {
+      const { data } = await axios.post(`${API_URL}/api/auth/register`, {
         full_name: fullName,
-        role: 'agent',
+        email,
+        password,
       })
-
-      if (insertError) {
-        setError('Account created but profile setup failed. Please contact support.')
-        setLoading(false)
-        return
+      localStorage.setItem('access_token', data.accessToken)
+      localStorage.setItem('refresh_token', data.refreshToken)
+      Cookies.set('access_token', data.accessToken, { expires: 1 })
+      router.push('/dashboard')
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.message ?? 'Registration failed. Please try again.'
+        setError(
+          err.response?.status === 409
+            ? 'An account with this email already exists.'
+            : msg
+        )
+      } else {
+        setError('Registration failed. Please try again.')
       }
+    } finally {
+      setLoading(false)
     }
-
-    router.push('/dashboard')
-    router.refresh()
   }
 
   return (
@@ -95,7 +92,7 @@ export default function RegisterPage() {
             type="password"
             autoComplete="new-password"
             required
-            minLength={6}
+            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
