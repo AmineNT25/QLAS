@@ -7,11 +7,7 @@ import {
   leadQuerySchema,
 } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
-import { requireAuth } from "../middleware/auth.js";
-
 const router = Router();
-
-router.use(requireAuth);
 
 // ─── GET /api/leads ───────────────────────────────────────────────────────────
 router.get("/", validate(leadQuerySchema, "query"), async (req, res, next) => {
