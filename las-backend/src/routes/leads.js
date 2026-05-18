@@ -6,8 +6,10 @@ import {
   updateLeadSchema,
   leadQuerySchema,
   leadIdParamSchema,
+  createActivitySchema,
 } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
+import { requireAuth } from "../middleware/auth.js";
 import { scoreLead } from "../services/scoringService.js";
 import { sendEmail } from "../services/emailService.js";
 
@@ -107,6 +109,46 @@ router.patch("/:id", validate(updateLeadSchema), async (req, res, next) => {
     next(err);
   }
 });
+
+// ─── GET /api/leads/:id/activities ────────────────────────────────────────────
+router.get(
+  "/:id/activities",
+  validate(leadIdParamSchema, "params"),
+  async (req, res, next) => {
+    try {
+      const activities = await LeadActivity.find({ leadId: req.params.id })
+        .sort({ createdAt: -1 });
+      res.json({ data: activities });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ─── POST /api/leads/:id/activities ───────────────────────────────────────────
+router.post(
+  "/:id/activities",
+  requireAuth,
+  validate(leadIdParamSchema, "params"),
+  validate(createActivitySchema),
+  async (req, res, next) => {
+    try {
+      const lead = await Lead.findById(req.params.id).select("_id");
+      if (!lead) return res.status(404).json({ message: "Lead not found" });
+
+      const activity = await new LeadActivity({
+        leadId: lead._id,
+        userId: req.user?.sub ?? null,
+        type: req.body.type,
+        description: req.body.description,
+      }).save();
+
+      res.status(201).json({ data: activity, message: "Activity logged" });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 // ─── DELETE /api/leads/:id ────────────────────────────────────────────────────
 router.delete("/:id", async (req, res, next) => {

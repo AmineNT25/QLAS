@@ -58,6 +58,12 @@ export const leadIdParamSchema = z.object({
   id: z.string().regex(/^[a-f\d]{24}$/i, "Invalid lead ID"),
 });
 
+// ─── Activity Schema ──────────────────────────────────────────────────────────
+export const createActivitySchema = z.object({
+  type: z.string().min(1, "Activity type is required").max(64),
+  description: z.string().max(2000).optional(),
+});
+
 // ─── Form Submission Schema ───────────────────────────────────────────────────
 export const formSubmitSchema = z.object({
   email: z.string().email("Invalid email address"),

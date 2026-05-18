@@ -9,6 +9,7 @@ import leadsRouter from "./routes/leads.js";
 import formsRouter from "./routes/forms.js";
 import authRouter from "./routes/auth.js";
 import statsRouter from "./routes/stats.js";
+import analyticsRouter from "./routes/analytics.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 
@@ -32,6 +33,7 @@ app.get("/health", (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRouter);
 app.use("/api/stats", statsRouter);
+app.use("/api/analytics", analyticsRouter);
 app.use("/api/leads", leadsRouter);
 app.use("/api/forms", formsRouter);
 
