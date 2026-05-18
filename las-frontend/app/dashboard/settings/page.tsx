@@ -1,8 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import api from '@/lib/api'
+import {
+  getActiveClientId,
+  setActiveClientId,
+} from '@/lib/activeClient'
 
-const TABS = ['Profile', 'Lead Settings', 'Notifications', 'Integrations', 'Email'] as const
+const TABS = ['Workspace', 'Profile', 'Lead Settings', 'Notifications', 'Integrations', 'Email'] as const
 type Tab = (typeof TABS)[number]
 
 const DEFAULT_STATUSES = ['New', 'Contacted', 'Qualified', 'Converted', 'Lost']
@@ -439,10 +445,99 @@ function EmailTab() {
   )
 }
 
+// ─── Tab: Workspace (active client / tenant switcher) ─────────────────────────
+
+interface ClientOption {
+  _id: string
+  name: string
+  industry?: string | null
+  website?: string | null
+}
+
+function WorkspaceTab() {
+  const [clients, setClients]   = useState<ClientOption[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState<string | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setActiveId(getActiveClientId())
+    api
+      .get<{ data: ClientOption[] }>('/api/clients', { params: { limit: 100 } })
+      .then(({ data }) => setClients(data.data))
+      .catch((e) => setError(e?.response?.data?.message ?? e.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  function choose(id: string) {
+    setActiveClientId(id)
+    setActiveId(id)
+  }
+
+  return (
+    <div className="space-y-4 max-w-lg">
+      <div>
+        <SectionTitle>Active Client</SectionTitle>
+        <p className="text-xs text-gray-500 mb-4">
+          The dashboard — leads, forms, analytics — is scoped to the client you
+          select here. Every API request is filtered to this tenant.
+        </p>
+
+        {loading && <p className="text-sm text-gray-400">Loading clients…</p>}
+
+        {error && (
+          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && clients.length === 0 && (
+          <p className="text-sm text-gray-400">
+            No clients yet. Create one on the Clients page first.
+          </p>
+        )}
+
+        <div className="space-y-2">
+          {clients.map((c) => {
+            const active = c._id === activeId
+            return (
+              <button
+                key={c._id}
+                onClick={() => choose(c._id)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-colors ${
+                  active
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                  <p className="text-xs text-gray-400">{c.industry || '—'}</p>
+                </div>
+                {active ? (
+                  <span className="text-xs font-medium text-blue-600 px-2 py-0.5 rounded-full bg-blue-100">
+                    Active
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400">Switch</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('Profile')
+function SettingsContent() {
+  const params = useSearchParams()
+  const initialTab = (TABS as readonly string[]).includes(params.get('tab') ?? '')
+    ? (params.get('tab') as Tab)
+    : 'Workspace'
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab)
 
   return (
     <div className="space-y-4">
@@ -469,6 +564,7 @@ export default function SettingsPage() {
 
         {/* Tab content */}
         <div className="p-6">
+          {activeTab === 'Workspace'     && <WorkspaceTab />}
           {activeTab === 'Profile'       && <ProfileTab />}
           {activeTab === 'Lead Settings' && <LeadSettingsTab />}
           {activeTab === 'Notifications' && <NotificationsTab />}
@@ -477,5 +573,13 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="py-16 text-center text-sm text-gray-400">Loading…</div>}>
+      <SettingsContent />
+    </Suspense>
   )
 }

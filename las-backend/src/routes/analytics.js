@@ -1,27 +1,22 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import Lead from "../models/Lead.js";
-import Client from "../models/Client.js";
 import { requireAuth } from "../middleware/auth.js";
+import { requireClientScope } from "../middleware/requireClientScope.js";
 
 const router = Router();
 
-// All analytics queries are scoped to leads belonging to clients owned
-// by the authenticated user (Client.createdBy === req.user.sub).
-async function getUserClientIds(userId) {
-  const clients = await Client.find({ createdBy: userId }).select("_id");
-  return clients.map((c) => c._id);
-}
-
 // ─── GET /api/analytics ───────────────────────────────────────────────────────
-router.get("/", requireAuth, async (req, res, next) => {
+// Scoped to the single active client (validated by requireClientScope).
+router.get("/", requireAuth, requireClientScope, async (req, res, next) => {
   try {
-    const clientIds = await getUserClientIds(req.user.sub);
+    const clientId = new mongoose.Types.ObjectId(req.clientId);
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-    const baseMatch = { clientId: { $in: clientIds } };
+    const baseMatch = { clientId };
 
     const [bySource, dailyLeads, byStatus] = await Promise.all([
       Lead.aggregate([

@@ -12,21 +12,31 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid id");
+
 // ─── Lead Schemas ─────────────────────────────────────────────────────────────
-export const createLeadSchema = z.object({
-  clientId: z.string().min(1, "clientId is required"),
-  formId: z.string().optional(),
-  email: z.string().email("Invalid email address"),
-  fullName: z.string().min(1, "Full name is required").optional(),
-  phone: z.string().optional(),
-  source: z.string().optional(),
-  utmSource: z.string().optional(),
-  utmMedium: z.string().optional(),
-  utmCampaign: z.string().optional(),
-  utmTerm: z.string().optional(),
-  utmContent: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
-});
+// Public capture (embed snippet / API): a lead must be attributable to a
+// tenant, either directly via `clientId` or indirectly via `formId` (the
+// route derives clientId from the form and ignores any client-supplied one).
+export const createLeadSchema = z
+  .object({
+    clientId: objectId.optional(),
+    formId: objectId.optional(),
+    email: z.string().email("Invalid email address"),
+    fullName: z.string().min(1, "Full name is required").optional(),
+    phone: z.string().optional(),
+    source: z.string().optional(),
+    utmSource: z.string().optional(),
+    utmMedium: z.string().optional(),
+    utmCampaign: z.string().optional(),
+    utmTerm: z.string().optional(),
+    utmContent: z.string().optional(),
+    metadata: z.record(z.unknown()).optional(),
+  })
+  .refine((d) => d.clientId || d.formId, {
+    message: "Either clientId or formId is required",
+    path: ["clientId"],
+  });
 
 export const updateLeadSchema = z.object({
   status: z
@@ -73,4 +83,67 @@ export const formSubmitSchema = z.object({
   utmMedium: z.string().optional(),
   utmCampaign: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
+});
+
+// ─── Embed Schema ─────────────────────────────────────────────────────────────
+// Validates the :formId path param for GET /api/embed/:formId.
+export const embedParamSchema = z.object({
+  formId: objectId,
+});
+
+// ─── Client Schemas ───────────────────────────────────────────────────────────
+const urlOrEmpty = z
+  .string()
+  .trim()
+  .url("Must be a valid URL")
+  .or(z.literal(""))
+  .optional();
+
+export const createClientSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  industry: z.string().trim().max(120).optional(),
+  website: urlOrEmpty,
+});
+
+export const updateClientSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required").optional(),
+    industry: z.string().trim().max(120).optional(),
+    website: urlOrEmpty,
+  })
+  .refine((d) => Object.keys(d).length > 0, {
+    message: "No fields to update",
+  });
+
+export const clientIdParamSchema = z.object({
+  id: objectId,
+});
+
+// ─── Form Schemas ─────────────────────────────────────────────────────────────
+const formFieldSchema = z.object({
+  label: z.string().min(1, "Field label is required"),
+  type: z.string().min(1, "Field type is required"),
+  placeholder: z.string().optional(),
+  required: z.boolean().optional(),
+  options: z.array(z.string()).optional(),
+});
+
+export const createFormSchema = z.object({
+  name: z.string().trim().min(1, "Form name is required"),
+  fields: z.array(formFieldSchema).default([]),
+  isActive: z.boolean().optional(),
+});
+
+export const updateFormSchema = z
+  .object({
+    name: z.string().trim().min(1).optional(),
+    fields: z.array(formFieldSchema).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((d) => Object.keys(d).length > 0, {
+    message: "No fields to update",
+  });
+
+export const formIdParamSchema = z.object({
+  id: objectId,
 });
