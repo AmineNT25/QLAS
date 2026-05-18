@@ -53,6 +53,11 @@ export const leadQuerySchema = z.object({
   search: z.string().optional(),
 });
 
+// ─── Score Lead Schema ────────────────────────────────────────────────────────
+export const leadIdParamSchema = z.object({
+  id: z.string().regex(/^[a-f\d]{24}$/i, "Invalid lead ID"),
+});
+
 // ─── Form Submission Schema ───────────────────────────────────────────────────
 export const formSubmitSchema = z.object({
   email: z.string().email("Invalid email address"),

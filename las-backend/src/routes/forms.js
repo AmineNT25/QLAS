@@ -4,6 +4,8 @@ import Lead from "../models/Lead.js";
 import LeadActivity from "../models/LeadActivity.js";
 import { formSubmitSchema } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
+import { scoreLead } from "../services/scoringService.js";
+import { sendEmail } from "../services/emailService.js";
 
 const router = Router();
 
@@ -50,6 +52,18 @@ router.post("/:id/submit", validate(formSubmitSchema), async (req, res, next) =>
       type: "form_submission",
       description: `Lead submitted via form: ${req.params.id}`,
     }).save();
+
+    // Non-blocking: score then send welcome email
+    scoreLead(String(lead._id))
+      .then(() =>
+        sendEmail("on_capture", {
+          email: lead.email,
+          clientId: String(lead.clientId),
+        })
+      )
+      .catch((err) =>
+        console.error(`[Forms] Post-save pipeline failed for ${lead._id}: ${err.message}`)
+      );
 
     res.status(201).json({
       message: "Thank you! Your submission has been received.",

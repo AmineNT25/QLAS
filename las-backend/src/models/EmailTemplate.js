@@ -5,6 +5,7 @@ const emailTemplateSchema = new mongoose.Schema(
     clientId: { type: mongoose.Schema.Types.ObjectId, ref: "Client", required: true },
     name: { type: String, required: true, trim: true },
     subject: { type: String, required: true },
+    body: { type: String, default: "" },
     trigger: { type: String, required: true },
   },
   { timestamps: { createdAt: "createdAt", updatedAt: false } }
