@@ -472,7 +472,7 @@ function PlatformCard({
                   type={f.isToken ? 'password' : 'text'}
                   placeholder={f.isToken ? '(leave blank to keep existing)' : f.placeholder}
                   autoComplete="off"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             ))}
@@ -564,10 +564,10 @@ function IntegrationsTab() {
             <select
               value={selectedClientId}
               onChange={(e) => setSelId(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
             >
               {clients.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+                <option key={c._id} value={c._id} className="text-gray-900">{c.name}</option>
               ))}
             </select>
           </div>
