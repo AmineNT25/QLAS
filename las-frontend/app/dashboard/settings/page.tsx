@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
 
 const TABS = ['Profile', 'Lead Settings', 'Notifications', 'Integrations', 'Email'] as const
 type Tab = (typeof TABS)[number]
@@ -304,13 +305,241 @@ function NotificationsTab() {
   )
 }
 
+// ─── Platform credential form ─────────────────────────────────────────────────
+
+type PlatformKey = 'meta' | 'google' | 'linkedin' | 'tiktok'
+
+interface PlatformConfig {
+  label:       string
+  webhookPath: string
+  fields:      { name: string; label: string; placeholder: string; isToken?: boolean }[]
+}
+
+const PLATFORM_CONFIGS: Record<PlatformKey, PlatformConfig> = {
+  meta: {
+    label:       'Meta / Facebook Ads',
+    webhookPath: '/api/webhooks/meta',
+    fields: [
+      { name: 'accessToken', label: 'Access Token',  placeholder: 'EAAxxxxx…', isToken: true },
+      { name: 'pageId',      label: 'Page ID',       placeholder: '123456789' },
+      { name: 'formId',      label: 'Lead Form ID',  placeholder: '987654321' },
+    ],
+  },
+  google: {
+    label:       'Google Ads',
+    webhookPath: '/api/webhooks/google',
+    fields: [
+      { name: 'accessToken', label: 'Access Token',  placeholder: 'ya29.xxxxx', isToken: true },
+      { name: 'customerId',  label: 'Customer ID',   placeholder: '123-456-7890' },
+    ],
+  },
+  linkedin: {
+    label:       'LinkedIn Ads',
+    webhookPath: '/api/webhooks/linkedin',
+    fields: [
+      { name: 'accessToken',    label: 'Access Token',    placeholder: 'AQVxxxxx…', isToken: true },
+      { name: 'organizationId', label: 'Organization ID', placeholder: '12345678' },
+    ],
+  },
+  tiktok: {
+    label:       'TikTok Ads',
+    webhookPath: '/api/webhooks/tiktok',
+    fields: [
+      { name: 'accessToken',  label: 'Access Token',   placeholder: 'xxxxxxxx', isToken: true },
+      { name: 'advertiserId', label: 'Advertiser ID',  placeholder: '1234567890123456' },
+    ],
+  },
+}
+
+function PlatformCard({
+  platform,
+  clientId,
+  savedValues,
+  onSaved,
+}: {
+  platform:    PlatformKey
+  clientId:    string
+  savedValues: Record<string, string>
+  onSaved?:   () => void
+}) {
+  const cfg = PLATFORM_CONFIGS[platform]
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+  const webhookUrl = `${apiBase}${cfg.webhookPath}`
+
+  const [open, setOpen]         = useState(false)
+  const [saving, setSaving]     = useState(false)
+  const [saved, setSaved]       = useState(false)
+  const [copied, setCopied]     = useState(false)
+  const [error, setError]       = useState<string | null>(null)
+
+  // Determine connected status: any non-token field is filled
+  const nonTokenFields = cfg.fields.filter((f) => !f.isToken)
+  const isConnected    = nonTokenFields.some((f) => !!savedValues[f.name])
+
+  const { register, handleSubmit, reset } = useForm<Record<string, string>>({
+    defaultValues: Object.fromEntries(cfg.fields.map((f) => [f.name, ''])),
+  })
+
+  async function onSave(data: Record<string, string>) {
+    if (!clientId) { setError('No client selected'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      const token = localStorage.getItem('access_token')
+      const res   = await fetch(`${apiBase}/api/clients/${clientId}/integrations`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ [platform]: data }),
+      })
+      if (!res.ok) throw new Error((await res.json()).message ?? 'Save failed')
+      setSaved(true)
+      reset()
+      onSaved?.()
+      setTimeout(() => setSaved(false), 2500)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function copyWebhookUrl() {
+    navigator.clipboard.writeText(webhookUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      {/* Header row */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-800">{cfg.label}</span>
+          {isConnected ? (
+            <span className="text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+              Connected
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+              Not connected
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+        >
+          {open ? 'Close' : 'Configure'}
+        </button>
+      </div>
+
+      {/* Expandable form */}
+      {open && (
+        <div className="border-t border-gray-100 px-4 py-4 space-y-4 bg-gray-50/50">
+          {/* Webhook URL to copy */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Webhook URL — paste this into {cfg.label} dashboard
+            </label>
+            <div className="flex gap-2">
+              <code className="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-lg text-gray-700 font-mono truncate">
+                {webhookUrl}
+              </code>
+              <button
+                type="button"
+                onClick={copyWebhookUrl}
+                className="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap"
+              >
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+
+          {/* Credential fields */}
+          <form onSubmit={handleSubmit(onSave)} className="space-y-3">
+            {cfg.fields.map((f) => (
+              <div key={f.name}>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  {f.label}
+                  {f.isToken && savedValues[f.name] !== undefined && (
+                    <span className="ml-2 text-green-600 font-normal">Token saved</span>
+                  )}
+                </label>
+                <input
+                  {...register(f.name)}
+                  type={f.isToken ? 'password' : 'text'}
+                  placeholder={f.isToken ? '(leave blank to keep existing)' : f.placeholder}
+                  autoComplete="off"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                />
+              </div>
+            ))}
+
+            {error && <p className="text-xs text-red-600">{error}</p>}
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              {saved && <span className="text-sm text-green-600">Saved!</span>}
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Tab: Integrations ────────────────────────────────────────────────────────
 
 function IntegrationsTab() {
-  const [saved, setSaved]     = useState(false)
-  const [webhook, setWebhook] = useState('')
-  const [apiKey, setApiKey]   = useState('qlas_live_xxxxxxxxxxxxxxxxxxxxxxxx')
-  const [showKey, setShowKey] = useState(false)
+  const [webhook, setWebhook]   = useState('')
+  const [apiKey, setApiKey]     = useState('qlas_live_xxxxxxxxxxxxxxxxxxxxxxxx')
+  const [showKey, setShowKey]   = useState(false)
+  const [apiSaved, setApiSaved] = useState(false)
+
+  // Client selection for the Connected Platforms section
+  const [clients, setClients]               = useState<{ _id: string; name: string }[]>([])
+  const [selectedClientId, setSelId]        = useState('')
+  const [clientsLoading, setClientsLoading] = useState(true)
+  // Saved non-token integration values per platform (tokens are stripped by backend)
+  type IntegrationData = Record<PlatformKey, Record<string, string>>
+  const [integrationData, setIntegrationData] = useState<Partial<IntegrationData>>({})
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    fetch(`${apiBase}/api/clients`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((body) => {
+        const list = body.data ?? []
+        setClients(list)
+        if (list.length > 0) setSelId(list[0]._id)
+      })
+      .catch(() => {})
+      .finally(() => setClientsLoading(false))
+  }, [apiBase])
+
+  // Re-fetch selected client's integration fields whenever the selection changes
+  useEffect(() => {
+    if (!selectedClientId) return
+    const token = localStorage.getItem('access_token')
+    fetch(`${apiBase}/api/clients/${selectedClientId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((body) => {
+        setIntegrationData(body.data?.integrations ?? {})
+      })
+      .catch(() => {})
+  }, [selectedClientId, apiBase])
 
   function regenerate() {
     const chars  = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -319,10 +548,62 @@ function IntegrationsTab() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
-      {/* Webhook */}
+    <div className="space-y-8 max-w-xl">
+      {/* Connected Platforms */}
       <div>
-        <SectionTitle>Webhook</SectionTitle>
+        <SectionTitle>Connected Platforms</SectionTitle>
+        <p className="text-xs text-gray-500 mb-4">
+          Each platform calls your QLAS webhook when a lead is captured.
+          Paste the webhook URL into the platform&apos;s dashboard, then save the credentials here.
+        </p>
+
+        {/* Client picker */}
+        {!clientsLoading && clients.length > 1 && (
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Configure for client</label>
+            <select
+              value={selectedClientId}
+              onChange={(e) => setSelId(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {clients.map((c) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {clientsLoading ? (
+          <p className="text-sm text-gray-400">Loading…</p>
+        ) : clients.length === 0 ? (
+          <p className="text-sm text-gray-500">Create a client first to configure ad platform integrations.</p>
+        ) : (
+          <div className="space-y-3">
+            {(Object.keys(PLATFORM_CONFIGS) as PlatformKey[]).map((p) => (
+              <PlatformCard
+                key={p}
+                platform={p}
+                clientId={selectedClientId}
+                savedValues={(integrationData[p as PlatformKey] ?? {}) as Record<string, string>}
+                onSaved={() => {
+                  // Re-fetch integration data so connection status refreshes
+                  const token = localStorage.getItem('access_token')
+                  fetch(`${apiBase}/api/clients/${selectedClientId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  })
+                    .then((r) => r.json())
+                    .then((body) => setIntegrationData(body.data?.integrations ?? {}))
+                    .catch(() => {})
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Outbound webhook */}
+      <div>
+        <SectionTitle>Outbound Webhook</SectionTitle>
         <p className="text-xs text-gray-500 mb-3">
           Send lead data to an external URL when a new lead is captured.
         </p>
@@ -343,7 +624,7 @@ function IntegrationsTab() {
         <div className="flex gap-2">
           <div className="flex-1 flex items-center px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
             <code className="text-xs text-gray-700 font-mono truncate">
-              {showKey ? apiKey : apiKey.replace(/qlas_live_\w+/, (m) => 'qlas_live_' + '•'.repeat(m.length - 10))}
+              {showKey ? apiKey : 'qlas_live_' + '•'.repeat(24)}
             </code>
           </div>
           <button
@@ -363,20 +644,7 @@ function IntegrationsTab() {
         </div>
       </div>
 
-      {/* Third-party placeholders */}
-      <div>
-        <SectionTitle>Integrations</SectionTitle>
-        <div className="space-y-2">
-          {['Zapier', 'Make (Integromat)', 'HubSpot'].map((name) => (
-            <div key={name} className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 bg-white">
-              <span className="text-sm font-medium text-gray-700">{name}</span>
-              <span className="text-xs text-gray-400 px-2 py-0.5 rounded-full bg-gray-100">Coming soon</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <SaveBar onSave={() => { setSaved(true); setTimeout(() => setSaved(false), 2500) }} saved={saved} />
+      <SaveBar onSave={() => { setApiSaved(true); setTimeout(() => setApiSaved(false), 2500) }} saved={apiSaved} />
     </div>
   )
 }

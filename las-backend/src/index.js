@@ -9,6 +9,8 @@ import leadsRouter from "./routes/leads.js";
 import formsRouter from "./routes/forms.js";
 import authRouter from "./routes/auth.js";
 import statsRouter from "./routes/stats.js";
+import clientsRouter from "./routes/clients.js";
+import webhooksRouter from "./routes/webhooks.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 
@@ -20,7 +22,10 @@ const PORT = process.env.PORT || 4000;
 // ─── Security & Parsing ───────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
-app.use(express.json());
+// Capture raw body buffer so webhook routes can verify HMAC signatures.
+app.use(express.json({
+  verify: (req, _res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
@@ -30,10 +35,12 @@ app.get("/health", (_req, res) => {
 });
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use("/api/auth", authRouter);
-app.use("/api/stats", statsRouter);
-app.use("/api/leads", leadsRouter);
-app.use("/api/forms", formsRouter);
+app.use("/api/auth",     authRouter);
+app.use("/api/stats",    statsRouter);
+app.use("/api/leads",    leadsRouter);
+app.use("/api/forms",    formsRouter);
+app.use("/api/clients",  clientsRouter);
+app.use("/api/webhooks", webhooksRouter);
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
 app.use(notFound);
