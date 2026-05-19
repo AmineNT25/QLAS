@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+import api from '@/lib/api'
 
 interface FormField {
   id:          string
@@ -40,18 +39,15 @@ export default function FormsPage() {
   const [submissions, setSubmissions] = useState<SubmissionsMap>({})
 
   useEffect(() => {
-    fetch(`${API_URL}/api/forms`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`Server error ${r.status}`)
-        return r.json() as Promise<{ data: Form[] }>
-      })
-      .then(({ data }) => setForms(data))
+    api.get<{ data: Form[] }>('/api/forms')
+      .then(({ data: body }) => setForms(body.data))
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false))
   }, [])
 
   function getEmbedCode(formId: string) {
-    return `<script src="${API_URL}/embed.js" data-form-id="${formId}" async></script>`
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+    return `<script src="${base}/embed.js" data-form-id="${formId}" async></script>`
   }
 
   async function copyEmbed(formId: string) {
@@ -77,9 +73,7 @@ export default function FormsPage() {
     if (isOpen || cachedData.length > 0) return
 
     try {
-      const res = await fetch(`${API_URL}/api/forms/${formId}/submissions`)
-      if (!res.ok) throw new Error()
-      const json = await res.json() as { data: Record<string, string>[] }
+      const { data: json } = await api.get<{ data: Record<string, string>[] }>(`/api/forms/${formId}/submissions`)
       setSubmissions((prev) => ({
         ...prev,
         [formId]: { loading: false, data: json.data, open: prev[formId]?.open ?? true },
@@ -94,12 +88,7 @@ export default function FormsPage() {
 
   async function toggleActive(form: Form) {
     try {
-      const res = await fetch(`${API_URL}/api/forms/${form.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !form.is_active }),
-      })
-      if (!res.ok) throw new Error()
+      await api.patch(`/api/forms/${form.id}`, { is_active: !form.is_active })
       setForms((prev) =>
         prev.map((f) => (f.id === form.id ? { ...f, is_active: !f.is_active } : f)),
       )
