@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
 import api from '@/lib/api'
+import PasswordInput from '@/components/PasswordInput'
 
 interface CurrentUser {
   id:        string
@@ -151,8 +152,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Current password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
@@ -162,8 +162,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">New password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={next}
@@ -174,8 +173,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Confirm new password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={confirm}
