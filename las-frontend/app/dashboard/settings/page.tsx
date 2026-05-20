@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 
-const TABS = ['Profile', 'Lead Settings', 'Notifications', 'Integrations', 'Email'] as const
+const TABS = ['Lead Settings', 'Notifications', 'Integrations', 'Email'] as const
 type Tab = (typeof TABS)[number]
 
 const DEFAULT_STATUSES = ['New', 'Contacted', 'Qualified', 'Converted', 'Lost']
@@ -74,52 +74,6 @@ function InputField({
         placeholder={placeholder}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
-    </div>
-  )
-}
-
-// ─── Tab: Profile ────────────────────────────────────────────────────────────
-
-function ProfileTab() {
-  const [saved, setSaved]   = useState(false)
-  const [form, setForm]     = useState({
-    company:  '',
-    email:    '',
-    phone:    '',
-    website:  '',
-  })
-
-  function set(key: keyof typeof form) {
-    return (v: string) => setForm((f) => ({ ...f, [key]: v }))
-  }
-
-  function handleSave() {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
-  }
-
-  return (
-    <div className="space-y-4 max-w-lg">
-      <SectionTitle>Profile Settings</SectionTitle>
-      <InputField label="Company Name" value={form.company}  onChange={set('company')}  placeholder="Acme Corp" />
-      <InputField label="Email"        type="email" value={form.email}    onChange={set('email')}    placeholder="hello@acme.com" />
-      <InputField label="Phone"        type="tel"   value={form.phone}    onChange={set('phone')}    placeholder="+1 555 000 0000" />
-      <InputField label="Website"      value={form.website}  onChange={set('website')}  placeholder="https://acme.com" />
-
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Logo</label>
-        <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-300 text-xs">
-            Logo
-          </div>
-          <label className="px-3 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer">
-            Upload Image
-            <input type="file" accept="image/*" className="hidden" />
-          </label>
-        </div>
-      </div>
-
-      <SaveBar onSave={handleSave} saved={saved} />
     </div>
   )
 }
@@ -710,7 +664,7 @@ function EmailTab() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('Profile')
+  const [activeTab, setActiveTab] = useState<Tab>('Lead Settings')
 
   return (
     <div className="space-y-4">
@@ -737,7 +691,6 @@ export default function SettingsPage() {
 
         {/* Tab content */}
         <div className="p-6">
-          {activeTab === 'Profile'       && <ProfileTab />}
           {activeTab === 'Lead Settings' && <LeadSettingsTab />}
           {activeTab === 'Notifications' && <NotificationsTab />}
           {activeTab === 'Integrations'  && <IntegrationsTab />}

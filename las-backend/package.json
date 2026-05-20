@@ -9,6 +9,7 @@
     "start": "node src/index.js",
     "lint": "eslint src/",
     "seed": "node seed.js",
+    "migrate:unset-company": "node scripts/unset-company-fields.js",
     "test": "vitest"
   },
   "dependencies": {

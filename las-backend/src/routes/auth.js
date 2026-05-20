@@ -2,8 +2,9 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import { registerSchema, loginSchema } from "../validators/schemas.js";
+import { registerSchema, loginSchema, changePasswordSchema } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -50,6 +51,39 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
 
     const tokens = signTokens({ sub: user._id, email: user.email, role: user.role });
     res.json({ ...tokens, user: { id: user._id, email: user.email, full_name: user.full_name, role: user.role } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─── GET /api/auth/me ─────────────────────────────────────────────────────────
+router.get("/me", requireAuth, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.sub).select("email full_name role createdAt");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({
+      data: { id: user._id, email: user.email, full_name: user.full_name, role: user.role },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─── PATCH /api/auth/password ─────────────────────────────────────────────────
+router.patch("/password", requireAuth, validate(changePasswordSchema), async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user.sub);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) return res.status(401).json({ message: "Current password is incorrect" });
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: "Password updated" });
   } catch (err) {
     next(err);
   }
