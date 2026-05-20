@@ -54,10 +54,12 @@ async function seed() {
 
   await Promise.all([User.deleteMany(), Client.deleteMany(), Form.deleteMany(), Lead.deleteMany()]);
 
-  const passwordHash = await bcrypt.hash("password123", 10);
+  // LAS has a single operator account — there is no public registration.
+  const adminEmail = (process.env.ADMIN_EMAIL || "medialeotechagence@gmail.com").toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD || "medialeo25";
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
   const [admin] = await User.insertMany([
-    { email: "admin@qlas.io", full_name: "Admin User", passwordHash, role: "admin" },
-    { email: "agent@qlas.io", full_name: "Agent User", passwordHash, role: "agent" },
+    { email: adminEmail, full_name: "Media Leo Tech", passwordHash, role: "admin" },
   ]);
 
   const [acme, globex] = await Client.insertMany([
@@ -127,7 +129,7 @@ async function seed() {
   );
 
   console.log("Seed complete:");
-  console.log("  2 users  — admin@qlas.io / agent@qlas.io  (password: password123)");
+  console.log(`  1 user   — ${adminEmail}`);
   console.log("  2 clients — Acme Corp, Globex Industries");
   console.log("  3 forms");
   console.log("  10 leads");

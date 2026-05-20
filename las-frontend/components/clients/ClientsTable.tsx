@@ -1,31 +1,28 @@
 'use client'
 
+/** An agency client account, as returned by the backend `/api/clients`. */
 export interface Client {
-  id: string
-  first_name: string
-  last_name: string
-  email: string
-  phone: string | null
-  company: string | null
-  address: string | null
-  notes: string | null
-  status: 'active' | 'inactive' | 'archived'
-  created_at: string
+  _id:        string
+  name:       string
+  industry?:  string
+  website?:   string
+  createdAt:  string
 }
 
-const STATUS_CLASSES: Record<string, string> = {
-  active:   'bg-green-100 text-green-700',
-  inactive: 'bg-gray-100  text-gray-600',
-  archived: 'bg-red-100   text-red-600',
+/** Editable fields accepted by POST / PATCH `/api/clients`. */
+export interface ClientInput {
+  name:     string
+  industry: string
+  website:  string
 }
 
 interface Props {
-  clients: Client[]
-  deletingId: string | null
-  onEdit: (client: Client) => void
-  onDelete: (id: string) => void
+  clients:         Client[]
+  deletingId:      string | null
+  onEdit:          (client: Client) => void
+  onDelete:        (id: string) => void
   onDeleteConfirm: (id: string) => void
-  onDeleteCancel: () => void
+  onDeleteCancel:  () => void
 }
 
 export default function ClientsTable({
@@ -42,10 +39,8 @@ export default function ClientsTable({
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
             <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Name</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Email</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Phone</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Company</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Status</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Industry</th>
+            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Website</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Date Added</th>
             <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Actions</th>
           </tr>
@@ -53,41 +48,44 @@ export default function ClientsTable({
         <tbody className="divide-y divide-gray-100">
           {clients.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-4 py-16 text-center text-gray-400">
+              <td colSpan={5} className="px-4 py-16 text-center text-gray-400">
                 No clients yet. Add your first client to get started.
               </td>
             </tr>
           ) : (
             clients.map((client) => (
-              <tr key={client.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={client._id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 text-gray-800 whitespace-nowrap font-medium">
-                  {client.first_name} {client.last_name}
+                  {client.name}
                 </td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{client.email}</td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{client.phone ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{client.company ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{client.industry || '—'}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                      STATUS_CLASSES[client.status] ?? 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {client.status}
-                  </span>
+                  {client.website ? (
+                    <a
+                      href={client.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-600 hover:text-brand-700 hover:underline"
+                    >
+                      {client.website}
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-gray-400 whitespace-nowrap tabular-nums text-xs">
-                  {new Date(client.created_at).toLocaleDateString('en-US', {
+                  {new Date(client.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
                   })}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  {deletingId === client.id ? (
+                  {deletingId === client._id ? (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500">Delete?</span>
                       <button
-                        onClick={() => onDeleteConfirm(client.id)}
+                        onClick={() => onDeleteConfirm(client._id)}
                         className="px-2.5 py-1 text-xs rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
                       >
                         Confirm
@@ -108,7 +106,7 @@ export default function ClientsTable({
                         Edit
                       </button>
                       <button
-                        onClick={() => onDelete(client.id)}
+                        onClick={() => onDelete(client._id)}
                         className="px-2.5 py-1 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
                       >
                         Delete

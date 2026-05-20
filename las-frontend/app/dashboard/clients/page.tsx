@@ -1,117 +1,80 @@
 'use client'
 
-import { Suspense, useCallback, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import ClientsTable, { type Client } from '@/components/clients/ClientsTable'
+import { useEffect, useMemo, useState } from 'react'
+import ClientsTable, { type Client, type ClientInput } from '@/components/clients/ClientsTable'
 import AddClientModal from '@/components/clients/AddClientModal'
-
-const API_URL  = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-const PAGE_SIZE = 20
-
-const STATUSES = ['active', 'inactive', 'archived'] as const
+import api from '@/lib/api'
 
 interface ApiResponse {
-  data:  Client[]
-  total: number
+  data: Client[]
 }
 
-// ─── Inner component — uses useSearchParams, must live inside <Suspense> ─────
-
-function ClientsContent() {
-  const router = useRouter()
-  const params = useSearchParams()
-
+export default function ClientsPage() {
   const [clients, setClients]       = useState<Client[]>([])
-  const [total, setTotal]           = useState(0)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState<string | null>(null)
+  const [search, setSearch]         = useState('')
   const [modalOpen, setModalOpen]   = useState(false)
   const [editing, setEditing]       = useState<Client | null>(null)
   const [saving, setSaving]         = useState(false)
+  const [saveError, setSaveError]   = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-
-  const search = params.get('search') ?? ''
-  const status = params.get('status') ?? ''
-  const page   = Number(params.get('page') ?? '1')
-
-  const pushParam = useCallback(
-    (updates: Record<string, string>) => {
-      const next = new URLSearchParams(params.toString())
-      Object.entries(updates).forEach(([k, v]) => {
-        if (v) next.set(k, v); else next.delete(k)
-      })
-      router.push(`/dashboard/clients?${next.toString()}`)
-    },
-    [params, router],
-  )
-
-  const handleSearch = useCallback((v: string) => pushParam({ search: v, page: '1' }), [pushParam])
-  const handleStatus = useCallback((v: string) => pushParam({ status: v, page: '1' }), [pushParam])
-  const handlePage   = useCallback((p: number) => pushParam({ page: String(p) }), [pushParam])
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
 
-    const qs = new URLSearchParams()
-    if (search) qs.set('search', search)
-    if (status) qs.set('status', status)
-    qs.set('page',  String(page))
-    qs.set('limit', String(PAGE_SIZE))
-
-    fetch(`${API_URL}/api/clients?${qs.toString()}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`Server error ${r.status}`)
-        return r.json() as Promise<ApiResponse>
-      })
-      .then(({ data, total: t }) => {
-        if (!cancelled) { setClients(data); setTotal(t) }
-      })
-      .catch((e: Error) => {
-        if (!cancelled) setError(e.message)
+    // api attaches the Bearer token and transparently refreshes it on 401.
+    api.get<ApiResponse>('/api/clients')
+      .then((res) => { if (!cancelled) setClients(res.data.data) })
+      .catch((e: unknown) => {
+        if (cancelled) return
+        const stat = (e as { response?: { status?: number } }).response?.status
+        setError(stat ? `Server error ${stat}` : 'Network error')
       })
       .finally(() => { if (!cancelled) setLoading(false) })
 
     return () => { cancelled = true }
-  }, [search, status, page])
+  }, [])
+
+  // The backend returns every client unpaginated, so search is client-side.
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return clients
+    return clients.filter((c) =>
+      [c.name, c.industry, c.website].some((v) => v?.toLowerCase().includes(q)),
+    )
+  }, [clients, search])
 
   function openAdd() {
     setEditing(null)
+    setSaveError(null)
     setModalOpen(true)
   }
 
   function openEdit(client: Client) {
     setEditing(client)
+    setSaveError(null)
     setModalOpen(true)
   }
 
-  async function handleSave(data: Omit<Client, 'id' | 'created_at'>) {
+  async function handleSave(data: ClientInput) {
     setSaving(true)
+    setSaveError(null)
     try {
       if (editing) {
-        const res = await fetch(`${API_URL}/api/clients/${editing.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        })
-        if (!res.ok) throw new Error(`Server error ${res.status}`)
-        const updated: Client = await res.json()
-        setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+        const res = await api.patch<{ data: Client }>(`/api/clients/${editing._id}`, data)
+        const updated = res.data.data
+        setClients((prev) => prev.map((c) => (c._id === updated._id ? updated : c)))
       } else {
-        const res = await fetch(`${API_URL}/api/clients`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        })
-        if (!res.ok) throw new Error(`Server error ${res.status}`)
-        const created: Client = await res.json()
-        setClients((prev) => [created, ...prev])
-        setTotal((t) => t + 1)
+        const res = await api.post<{ data: Client }>('/api/clients', data)
+        setClients((prev) => [res.data.data, ...prev])
       }
       setModalOpen(false)
-    } catch {
-      // keep modal open so user can retry
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message
+      setSaveError(msg ?? 'Could not save client')
     } finally {
       setSaving(false)
     }
@@ -119,18 +82,14 @@ function ClientsContent() {
 
   async function handleDeleteConfirm(id: string) {
     try {
-      const res = await fetch(`${API_URL}/api/clients/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(`Server error ${res.status}`)
-      setClients((prev) => prev.filter((c) => c.id !== id))
-      setTotal((t) => Math.max(0, t - 1))
+      await api.delete(`/api/clients/${id}`)
+      setClients((prev) => prev.filter((c) => c._id !== id))
     } catch {
-      // silent — keep row intact
+      // silent — keep the row intact so the user can retry
     } finally {
       setDeletingId(null)
     }
   }
-
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="space-y-4">
@@ -138,52 +97,35 @@ function ClientsContent() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-800">Clients</h2>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{total} total</span>
+          <span className="text-sm text-gray-500">{clients.length} total</span>
           <button
             onClick={openAdd}
-            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition-colors"
           >
             + Add Client
           </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Search clients…"
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-        />
-        <select
-          value={status}
-          onChange={(e) => handleStatus(e.target.value)}
-          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Search */}
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by name, industry, or website…"
+        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 w-72"
+      />
 
-      {/* Error */}
-      {error && (
+      {/* Table / states */}
+      {error ? (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           Failed to load clients: {error}
         </div>
-      )}
-
-      {/* Table */}
-      {loading ? (
+      ) : loading ? (
         <div className="py-16 text-center text-sm text-gray-400">Loading…</div>
       ) : (
         <ClientsTable
-          clients={clients}
+          clients={filtered}
           deletingId={deletingId}
           onEdit={openEdit}
           onDelete={(id) => setDeletingId(id)}
@@ -192,46 +134,14 @@ function ClientsContent() {
         />
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => handlePage(page - 1)}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50 transition-colors"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-gray-500">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => handlePage(page + 1)}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50 transition-colors"
-          >
-            Next
-          </button>
-        </div>
-      )}
-
       <AddClientModal
         open={modalOpen}
         initial={editing}
         saving={saving}
+        error={saveError}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
       />
     </div>
-  )
-}
-
-// ─── Page — wraps content in Suspense (required for useSearchParams in Next.js 16) ─
-
-export default function ClientsPage() {
-  return (
-    <Suspense fallback={<div className="py-16 text-center text-sm text-gray-400">Loading…</div>}>
-      <ClientsContent />
-    </Suspense>
   )
 }

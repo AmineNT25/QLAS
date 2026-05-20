@@ -16,7 +16,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-        checked ? 'bg-blue-600' : 'bg-gray-200'
+        checked ? 'bg-brand-600' : 'bg-gray-200'
       }`}
     >
       <span
@@ -34,7 +34,7 @@ function SaveBar({ onSave, saved }: { onSave: () => void; saved: boolean }) {
       <button
         type="button"
         onClick={onSave}
-        className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+        className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition-colors"
       >
         Save Changes
       </button>
@@ -72,7 +72,7 @@ function InputField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
       />
     </div>
   )
@@ -136,7 +136,7 @@ function LeadSettingsTab() {
             onChange={(e) => setNewStatus(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addStatus()}
             placeholder="Add status…"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
             type="button"
@@ -162,7 +162,7 @@ function LeadSettingsTab() {
               rows={6}
               value={template}
               onChange={(e) => setTemplate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
             <p className="text-xs text-gray-400 mt-1">Use {'{{name}}'}, {'{{email}}'} as placeholders.</p>
           </div>
@@ -242,7 +242,7 @@ function NotificationsTab() {
             onChange={(e) => setNewRecipient(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addRecipient()}
             placeholder="Add email address…"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
             type="button"
@@ -383,7 +383,7 @@ function PlatformCard({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
         >
           {open ? 'Close' : 'Configure'}
         </button>
@@ -426,7 +426,7 @@ function PlatformCard({
                   type={f.isToken ? 'password' : 'text'}
                   placeholder={f.isToken ? '(leave blank to keep existing)' : f.placeholder}
                   autoComplete="off"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             ))}
@@ -437,7 +437,7 @@ function PlatformCard({
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+                className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
               >
                 {saving ? 'Saving…' : 'Save'}
               </button>
@@ -518,7 +518,7 @@ function IntegrationsTab() {
             <select
               value={selectedClientId}
               onChange={(e) => setSelId(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-gray-900"
             >
               {clients.map((c) => (
                 <option key={c._id} value={c._id} className="text-gray-900">{c.name}</option>
@@ -680,7 +680,7 @@ export default function SettingsPage() {
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab
-                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/40'
+                  ? 'text-brand-600 border-b-2 border-brand-600 bg-brand-50/40'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >

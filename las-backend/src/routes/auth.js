@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import { registerSchema, loginSchema, changePasswordSchema } from "../validators/schemas.js";
+import { loginSchema, changePasswordSchema } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -18,25 +18,8 @@ function signTokens(payload) {
   return { accessToken, refreshToken };
 }
 
-// ─── POST /api/auth/register ──────────────────────────────────────────────────
-router.post("/register", validate(registerSchema), async (req, res, next) => {
-  try {
-    const { full_name, email, password } = req.body;
-
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(409).json({ message: "An account with this email already exists." });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const user = await new User({ full_name, email, passwordHash }).save();
-
-    const tokens = signTokens({ sub: user._id, email: user.email, role: user.role });
-    res.status(201).json({ ...tokens, user: { id: user._id, email: user.email, full_name: user.full_name, role: user.role } });
-  } catch (err) {
-    next(err);
-  }
-});
+// LAS is an internal agency tool — there is no public registration.
+// The single operator account is provisioned via scripts/ensure-admin.js.
 
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────
 router.post("/login", validate(loginSchema), async (req, res, next) => {

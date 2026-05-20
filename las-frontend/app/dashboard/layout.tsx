@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { ReactNode } from 'react'
 import UserMenu from '@/components/dashboard/UserMenu'
@@ -16,8 +17,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-56 shrink-0 flex flex-col bg-white border-r border-gray-200">
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-gray-200">
-          <span className="text-lg font-bold tracking-tight text-blue-600">QLAS</span>
+        <div className="flex justify-center px-6 py-5 border-b border-gray-200">
+          <Image
+            src="/logo.png"
+            alt="Media Leo Tech"
+            width={150}
+            height={150}
+            priority
+            className="h-auto w-36"
+          />
         </div>
 
         {/* Nav */}

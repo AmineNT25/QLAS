@@ -1,4 +1,5 @@
 import axios from 'axios'
+import Cookies from 'js-cookie'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
@@ -12,6 +13,16 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+/** Wipes the session everywhere — localStorage and the access-token cookie the
+ *  proxy reads — then sends the user back to /login. */
+function clearSession() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  Cookies.remove('access_token')
+  window.location.href = '/login'
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -22,7 +33,7 @@ api.interceptors.response.use(
 
       const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null
       if (!refreshToken) {
-        if (typeof window !== 'undefined') window.location.href = '/login'
+        clearSession()
         return Promise.reject(error)
       }
 
@@ -35,9 +46,7 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.accessToken}`
         return api(original)
       } catch {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        if (typeof window !== 'undefined') window.location.href = '/login'
+        clearSession()
         return Promise.reject(error)
       }
     }

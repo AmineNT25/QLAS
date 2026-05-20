@@ -59,7 +59,7 @@ export default function UserMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setMenuOpen((v) => !v)}
-        className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white text-sm font-semibold select-none transition-colors"
+        className="h-8 w-8 rounded-full bg-brand-600 hover:bg-brand-700 flex items-center justify-center text-white text-sm font-semibold select-none transition-colors"
         aria-label="Open user menu"
       >
         {initials(user?.full_name, user?.email)}
@@ -156,7 +156,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
               required
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -168,7 +168,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
               minLength={8}
               value={next}
               onChange={(e) => setNext(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -180,7 +180,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
               minLength={8}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -198,7 +198,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             <button
               type="submit"
               disabled={saving || success}
-              className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-60 transition-colors"
+              className="px-4 py-2 text-sm rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium disabled:opacity-60 transition-colors"
             >
               {saving ? 'Saving…' : 'Update'}
             </button>

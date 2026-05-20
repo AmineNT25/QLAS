@@ -71,13 +71,13 @@ export default function NewFormPage() {
           value={formName}
           onChange={(e) => setFormName(e.target.value)}
           placeholder="Form name…"
-          className="flex-1 max-w-xs px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 max-w-xs px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
 
         <select
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
-          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           <option value="">Select client…</option>
           {PLACEHOLDER_CLIENTS.map((c) => (
@@ -95,7 +95,7 @@ export default function NewFormPage() {
             aria-checked={isActive}
             onClick={() => setIsActive((v) => !v)}
             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-              isActive ? 'bg-blue-600' : 'bg-gray-200'
+              isActive ? 'bg-brand-600' : 'bg-gray-200'
             }`}
           >
             <span
@@ -117,7 +117,7 @@ export default function NewFormPage() {
 
         <button
           onClick={handleSave}
-          className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+          className="px-4 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition-colors"
         >
           Save
         </button>

@@ -22,7 +22,7 @@ interface Props {
 }
 
 const STATUS_CLASSES: Record<string, string> = {
-  new:       'bg-blue-100   text-blue-700',
+  new:       'bg-brand-100   text-brand-700',
   contacted: 'bg-yellow-100 text-yellow-700',
   qualified: 'bg-purple-100 text-purple-700',
   converted: 'bg-green-100  text-green-700',

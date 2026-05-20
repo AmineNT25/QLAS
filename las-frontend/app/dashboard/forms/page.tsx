@@ -106,7 +106,7 @@ export default function FormsPage() {
           <span className="text-sm text-gray-500">{forms.length} total</span>
           <Link
             href="/dashboard/forms/new"
-            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition-colors"
           >
             + Create Form
           </Link>
@@ -131,7 +131,7 @@ export default function FormsPage() {
           <p className="text-gray-400 text-sm">No forms yet. Create your first lead capture form.</p>
           <Link
             href="/dashboard/forms/new"
-            className="inline-block mt-4 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+            className="inline-block mt-4 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition-colors"
           >
             Create Form
           </Link>

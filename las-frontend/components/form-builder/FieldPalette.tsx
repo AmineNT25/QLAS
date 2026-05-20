@@ -26,12 +26,12 @@ export default function FieldPalette({ onAdd }: Props) {
           <button
             key={type}
             onClick={() => onAdd(type)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-colors group"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 hover:border-brand-400 hover:bg-brand-50 text-left transition-colors group"
           >
-            <span className="w-7 h-7 flex items-center justify-center rounded bg-gray-100 group-hover:bg-blue-100 text-gray-500 group-hover:text-blue-600 text-sm font-mono font-bold">
+            <span className="w-7 h-7 flex items-center justify-center rounded bg-gray-100 group-hover:bg-brand-100 text-gray-500 group-hover:text-brand-600 text-sm font-mono font-bold">
               {icon}
             </span>
-            <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">
+            <span className="text-sm font-medium text-gray-700 group-hover:text-brand-700">
               {label}
             </span>
           </button>

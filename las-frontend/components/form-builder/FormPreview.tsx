@@ -42,7 +42,7 @@ export default function FormPreview({ formName, fields }: Props) {
                 type="text"
                 placeholder={field.placeholder}
                 {...register(field.id, { required: field.required })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             )}
 
@@ -51,7 +51,7 @@ export default function FormPreview({ formName, fields }: Props) {
                 type="email"
                 placeholder={field.placeholder}
                 {...register(field.id, { required: field.required })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             )}
 
@@ -60,7 +60,7 @@ export default function FormPreview({ formName, fields }: Props) {
                 type="tel"
                 placeholder={field.placeholder}
                 {...register(field.id, { required: field.required })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             )}
 
@@ -69,14 +69,14 @@ export default function FormPreview({ formName, fields }: Props) {
                 rows={3}
                 placeholder={field.placeholder}
                 {...register(field.id, { required: field.required })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               />
             )}
 
             {field.type === 'select' && (
               <select
                 {...register(field.id, { required: field.required })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
               >
                 <option value="">Select an option</option>
                 {field.options.map((opt, i) => (
@@ -92,7 +92,7 @@ export default function FormPreview({ formName, fields }: Props) {
                 <input
                   type="checkbox"
                   {...register(field.id, { required: field.required })}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                 />
                 <span className="text-sm text-gray-600">
                   {field.placeholder || field.label}
@@ -104,7 +104,7 @@ export default function FormPreview({ formName, fields }: Props) {
 
         <button
           type="submit"
-          className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+          className="w-full mt-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
         >
           Submit
         </button>

@@ -17,13 +17,13 @@ export default function LeadsFilters({ search, status, onSearch, onStatus }: Pro
         value={search}
         onChange={(e) => onSearch(e.target.value)}
         placeholder="Search leads…"
-        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-64"
       />
 
       <select
         value={status}
         onChange={(e) => onStatus(e.target.value)}
-        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
       >
         <option value="">All statuses</option>
         {STATUSES.map((s) => (

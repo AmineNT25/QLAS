@@ -47,7 +47,7 @@ export default function FieldConfigPanel({ field, onChange }: Props) {
           type="text"
           value={field.label}
           onChange={(e) => update({ label: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           placeholder="Field label"
         />
       </div>
@@ -60,7 +60,7 @@ export default function FieldConfigPanel({ field, onChange }: Props) {
             type="text"
             value={field.placeholder}
             onChange={(e) => update({ placeholder: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="Placeholder text"
           />
         </div>
@@ -75,7 +75,7 @@ export default function FieldConfigPanel({ field, onChange }: Props) {
           aria-checked={field.required}
           onClick={() => update({ required: !field.required })}
           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
-            field.required ? 'bg-blue-600' : 'bg-gray-200'
+            field.required ? 'bg-brand-600' : 'bg-gray-200'
           }`}
         >
           <span
@@ -97,7 +97,7 @@ export default function FieldConfigPanel({ field, onChange }: Props) {
                   type="text"
                   value={opt}
                   onChange={(e) => updateOption(i, e.target.value)}
-                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder={`Option ${i + 1}`}
                 />
                 <button
@@ -110,7 +110,7 @@ export default function FieldConfigPanel({ field, onChange }: Props) {
             ))}
             <button
               onClick={addOption}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium text-left"
+              className="text-sm text-brand-600 hover:text-brand-700 font-medium text-left"
             >
               + Add option
             </button>

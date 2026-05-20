@@ -10,6 +10,7 @@
     "lint": "eslint src/",
     "seed": "node seed.js",
     "migrate:unset-company": "node scripts/unset-company-fields.js",
+    "ensure-admin": "node scripts/ensure-admin.js",
     "test": "vitest"
   },
   "dependencies": {

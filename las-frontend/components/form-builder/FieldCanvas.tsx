@@ -10,7 +10,7 @@ import type { FormField } from './types'
 
 const TYPE_COLORS: Record<string, string> = {
   text: 'bg-gray-100 text-gray-700',
-  email: 'bg-blue-100 text-blue-700',
+  email: 'bg-brand-100 text-brand-700',
   phone: 'bg-green-100 text-green-700',
   textarea: 'bg-purple-100 text-purple-700',
   select: 'bg-orange-100 text-orange-700',
@@ -66,7 +66,7 @@ export default function FieldCanvas({
                     onClick={() => onSelect(field.id)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer select-none transition-shadow ${
                       selectedId === field.id
-                        ? 'border-blue-500 ring-2 ring-blue-200 bg-white'
+                        ? 'border-brand-500 ring-2 ring-brand-200 bg-white'
                         : 'border-gray-200 bg-white hover:border-gray-300'
                     } ${snapshot.isDragging ? 'shadow-lg' : 'shadow-sm'}`}
                   >
