@@ -14,10 +14,17 @@ export function proxy(request: NextRequest) {
   const hasSession = Boolean(request.cookies.get('access_token')?.value)
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/dashboard') && !hasSession) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  if (pathname === '/' || pathname.startsWith('/dashboard')) {
+    if (!hasSession) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+    if (pathname === '/') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   if (pathname === '/login' && hasSession) {
@@ -30,5 +37,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/dashboard/:path*', '/login'],
+  matcher: ['/', '/dashboard', '/dashboard/:path*', '/login'],
 }
