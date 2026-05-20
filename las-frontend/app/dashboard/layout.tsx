@@ -1,17 +1,37 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
-import { ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import { ReactNode, useEffect, useState } from 'react'
 import UserMenu from '@/components/dashboard/UserMenu'
 
 const NAV_LINKS = [
-  { href: '/dashboard',          label: 'Dashboard' },
-  { href: '/dashboard/leads',    label: 'Leads'     },
-  { href: '/dashboard/clients',  label: 'Clients'   },
-  { href: '/dashboard/forms',    label: 'Forms'     },
-  { href: '/dashboard/settings', label: 'Settings'  },
+  { href: '/dashboard',           label: 'Dashboard' },
+  { href: '/dashboard/leads',     label: 'Leads'     },
+  { href: '/dashboard/analytics', label: 'Analytics' },
+  { href: '/dashboard/clients',   label: 'Clients'   },
+  { href: '/dashboard/forms',     label: 'Forms'     },
+  { href: '/dashboard/settings',  label: 'Settings'  },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const router = useRouter()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      router.replace('/login')
+      return
+    }
+    setReady(true)
+  }, [router])
+
+  if (!ready) {
+    return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Loading…</div>
+  }
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}

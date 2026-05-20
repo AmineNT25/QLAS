@@ -1,74 +1,61 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import type { Client, ClientInput } from './ClientsTable'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import type { Client } from './ClientsTable'
 
-const EMPTY: ClientInput = {
-  name:     '',
-  industry: '',
-  website:  '',
+export interface ClientFormData {
+  name: string
+  industry: string
+  website: string
 }
+
+const EMPTY: ClientFormData = { name: '', industry: '', website: '' }
 
 interface Props {
-  open:     boolean
-  initial:  Client | null
-  saving:   boolean
-  error?:   string | null
-  onClose:  () => void
-  onSave:   (data: ClientInput) => void
+  open: boolean
+  initial: Client | null
+  saving: boolean
+  error: string | null
+  onClose: () => void
+  onSave: (data: ClientFormData) => void
 }
 
-export default function AddClientModal({ open, initial, saving, error, onClose, onSave }: Props) {
-  const [form, setForm]     = useState<ClientInput>(EMPTY)
-  const [errors, setErrors] = useState<Partial<Record<keyof ClientInput, string>>>({})
+export default function AddClientModal({
+  open,
+  initial,
+  saving,
+  error,
+  onClose,
+  onSave,
+}: Props) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ClientFormData>({ defaultValues: EMPTY })
 
   useEffect(() => {
     if (!open) return
-    if (initial) {
-      setForm({
-        name:     initial.name,
-        industry: initial.industry ?? '',
-        website:  initial.website ?? '',
-      })
-    } else {
-      setForm(EMPTY)
-    }
-    setErrors({})
-  }, [open, initial])
+    reset(
+      initial
+        ? {
+            name: initial.name ?? '',
+            industry: initial.industry ?? '',
+            website: initial.website ?? '',
+          }
+        : EMPTY,
+    )
+  }, [open, initial, reset])
 
   if (!open) return null
-
-  function validate() {
-    const e: typeof errors = {}
-    if (!form.name.trim()) e.name = 'Required'
-    if (form.website.trim() && !/^https?:\/\/.+/i.test(form.website.trim())) {
-      e.website = 'Must be a full URL (https://…)'
-    }
-    return e
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const errs = validate()
-    if (Object.keys(errs).length) { setErrors(errs); return }
-    onSave({
-      name:     form.name.trim(),
-      industry: form.industry.trim(),
-      website:  form.website.trim(),
-    })
-  }
-
-  function set(key: keyof ClientInput, value: string) {
-    setForm((f) => ({ ...f, [key]: value }))
-    setErrors((prev) => { const next = { ...prev }; delete next[key]; return next })
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-base font-semibold text-gray-800">
             {initial ? 'Edit Client' : 'Add Client'}
@@ -81,43 +68,70 @@ export default function AddClientModal({ open, initial, saving, error, onClose, 
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          <Field
-            id="name"
-            label="Client Name"
-            required
-            value={form.name}
-            error={errors.name}
-            placeholder="Acme Corp"
-            onChange={(v) => set('name', v)}
-          />
-
-          <Field
-            id="industry"
-            label="Industry"
-            value={form.industry}
-            placeholder="Technology"
-            onChange={(v) => set('industry', v)}
-          />
-
-          <Field
-            id="website"
-            label="Website"
-            type="url"
-            value={form.website}
-            error={errors.website}
-            placeholder="https://acme.com"
-            onChange={(v) => set('website', v)}
-          />
-
+        <form
+          onSubmit={handleSubmit(onSave)}
+          className="p-6 space-y-4 max-h-[80vh] overflow-y-auto"
+        >
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
               {error}
-            </p>
+            </div>
           )}
 
-          {/* Footer */}
+          <div>
+            <label htmlFor="name" className="block text-xs font-medium text-gray-600 mb-1">
+              Name<span className="text-red-500 ml-0.5">*</span>
+            </label>
+            <input
+              id="name"
+              {...register('name', {
+                required: 'Name is required',
+                setValueAs: (v: string) => v.trim(),
+              })}
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                errors.name ? 'border-red-400' : 'border-gray-300'
+              }`}
+              placeholder="Acme Corp"
+            />
+            {errors.name && (
+              <p className="mt-0.5 text-xs text-red-500">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="industry" className="block text-xs font-medium text-gray-600 mb-1">
+              Industry
+            </label>
+            <input
+              id="industry"
+              {...register('industry')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Technology"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="website" className="block text-xs font-medium text-gray-600 mb-1">
+              Website
+            </label>
+            <input
+              id="website"
+              {...register('website', {
+                pattern: {
+                  value: /^https?:\/\/[^\s]+$/i,
+                  message: 'Must be a valid URL (https://…)',
+                },
+              })}
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                errors.website ? 'border-red-400' : 'border-gray-300'
+              }`}
+              placeholder="https://acme.com"
+            />
+            {errors.website && (
+              <p className="mt-0.5 text-xs text-red-500">{errors.website.message}</p>
+            )}
+          </div>
+
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
@@ -136,39 +150,6 @@ export default function AddClientModal({ open, initial, saving, error, onClose, 
           </div>
         </form>
       </div>
-    </div>
-  )
-}
-
-interface FieldProps {
-  id:           string
-  label:        string
-  type?:        string
-  required?:    boolean
-  value:        string
-  error?:       string
-  placeholder?: string
-  onChange:     (v: string) => void
-}
-
-function Field({ id, label, type = 'text', required, value, error, placeholder, onChange }: FieldProps) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-xs font-medium text-gray-600 mb-1">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full px-3 py-2 border rounded-lg text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
-          error ? 'border-red-400' : 'border-gray-300'
-        }`}
-      />
-      {error && <p className="mt-0.5 text-xs text-red-500">{error}</p>}
     </div>
   )
 }
