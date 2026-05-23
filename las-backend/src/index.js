@@ -13,6 +13,7 @@ import analyticsRouter from "./routes/analytics.js";
 import clientsRouter from "./routes/clients.js";
 import webhooksRouter from "./routes/webhooks.js";
 import embedRouter from "./routes/embed.js";
+import prospectsRouter from "./routes/prospects.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 
@@ -52,7 +53,8 @@ app.use("/api/leads",     leadsRouter);
 app.use("/api/forms",     formsRouter);
 app.use("/api/clients",   clientsRouter);
 app.use("/api/webhooks",  webhooksRouter);
-app.use("/api/embed",     embedRouter);
+app.use("/api/embed",      embedRouter);
+app.use("/api/prospects", prospectsRouter);
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
 app.use(notFound);
