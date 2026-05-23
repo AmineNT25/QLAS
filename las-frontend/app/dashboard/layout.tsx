@@ -7,12 +7,12 @@ import { ReactNode, useEffect, useState } from 'react'
 import UserMenu from '@/components/dashboard/UserMenu'
 
 const NAV_LINKS = [
-  { href: '/dashboard',           label: 'Dashboard' },
-  { href: '/dashboard/leads',     label: 'Leads'     },
-  { href: '/dashboard/analytics', label: 'Analytics' },
-  { href: '/dashboard/clients',   label: 'Clients'   },
-  { href: '/dashboard/forms',     label: 'Forms'     },
-  { href: '/dashboard/settings',  label: 'Settings'  },
+  { href: '/dashboard',             label: 'Dashboard'  },
+  { href: '/dashboard/prospects',   label: 'Prospects'  },
+  { href: '/dashboard/discovery',   label: 'Discovery'  },
+  { href: '/dashboard/pipeline',    label: 'Pipeline'   },
+  { href: '/dashboard/analytics',   label: 'Analytics'  },
+  { href: '/dashboard/settings',    label: 'Settings'   },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

@@ -17,6 +17,14 @@ interface Stats {
   dailyLeads: { date: string; count: number }[]
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  new:       'Not Contacted',
+  contacted: 'Contacted',
+  qualified: 'Interested',
+  converted: 'Client Won',
+  lost:      'Lost',
+}
+
 const STATUS_COLORS: Record<string, string> = {
   new:       '#3b82f6',
   contacted: '#f59e0b',
@@ -78,11 +86,11 @@ export default function DashboardPage() {
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Leads"      value={stats.total} />
-        <StatCard label="Conversion Rate"  value={`${stats.conversionRate}%`} sub="leads → converted" />
-        <StatCard label="Avg Lead Score"   value={stats.avgScore} sub="out of 100" />
+        <StatCard label="Total Prospects"        value={stats.total} />
+        <StatCard label="Win Rate"               value={`${stats.conversionRate}%`} sub="prospects → clients won" />
+        <StatCard label="Avg Opportunity Score"  value={stats.avgScore} sub="out of 100" />
         <StatCard
-          label="New This Month"
+          label="Discovered This Month"
           value={stats.dailyLeads.reduce((s, d) => s + d.count, 0)}
           sub="last 30 days"
         />
@@ -93,7 +101,7 @@ export default function DashboardPage() {
 
         {/* Area chart — leads over time */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-sm font-semibold text-gray-700 mb-4">Leads — last 30 days</p>
+          <p className="text-sm font-semibold text-gray-700 mb-4">Prospects Discovered — last 30 days</p>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={dailyData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
               <defs>
@@ -112,7 +120,7 @@ export default function DashboardPage() {
                 stroke="#3b82f6"
                 strokeWidth={2}
                 fill="url(#leadGrad)"
-                name="Leads"
+                name="Prospects"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -120,7 +128,7 @@ export default function DashboardPage() {
 
         {/* Pie chart — by status */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <p className="text-sm font-semibold text-gray-700 mb-4">Leads by Status</p>
+          <p className="text-sm font-semibold text-gray-700 mb-4">Prospects by Status</p>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
@@ -139,12 +147,12 @@ export default function DashboardPage() {
               </Pie>
               <Tooltip
                 contentStyle={{ fontSize: 12 }}
-                formatter={(value, name) => [value, String(name).charAt(0).toUpperCase() + String(name).slice(1)]}
+                formatter={(value, name) => [value, STATUS_LABELS[String(name)] ?? String(name)]}
               />
               <Legend
                 iconType="circle"
                 iconSize={8}
-                formatter={(value) => value.charAt(0).toUpperCase() + value.slice(1)}
+                formatter={(value) => STATUS_LABELS[value] ?? value}
                 wrapperStyle={{ fontSize: 12 }}
               />
             </PieChart>
@@ -154,21 +162,21 @@ export default function DashboardPage() {
 
       {/* Bar chart — status breakdown */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-sm font-semibold text-gray-700 mb-4">Lead Pipeline</p>
+        <p className="text-sm font-semibold text-gray-700 mb-4">Outreach Pipeline</p>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={stats.byStatus} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
             <XAxis
               dataKey="status"
               tick={{ fontSize: 12 }}
-              tickFormatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)}
+              tickFormatter={(v) => STATUS_LABELS[v] ?? v}
             />
             <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
             <Tooltip
               contentStyle={{ fontSize: 12 }}
-              formatter={(value, name) => [value, String(name).charAt(0).toUpperCase() + String(name).slice(1)]}
+              formatter={(value, name) => [value, STATUS_LABELS[String(name)] ?? String(name)]}
             />
-            <Bar dataKey="count" name="Leads" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="count" name="Prospects" radius={[4, 4, 0, 0]}>
               {stats.byStatus.map((entry) => (
                 <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? '#6b7280'} />
               ))}
