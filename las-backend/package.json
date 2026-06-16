@@ -11,17 +11,20 @@
     "seed": "node seed.js",
     "migrate:unset-company": "node scripts/unset-company-fields.js",
     "ensure-admin": "node scripts/ensure-admin.js",
-    "test": "vitest"
+    "test": "vitest",
+    "postinstall": "npx playwright install chromium --with-deps"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
     "morgan": "^1.10.0",
+    "playwright": "^1.61.0",
     "resend": "^6.12.3",
     "zod": "^3.23.8"
   },

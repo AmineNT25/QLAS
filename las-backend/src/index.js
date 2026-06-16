@@ -14,6 +14,7 @@ import clientsRouter from "./routes/clients.js";
 import webhooksRouter from "./routes/webhooks.js";
 import embedRouter from "./routes/embed.js";
 import prospectsRouter from "./routes/prospects.js";
+import discoveryRouter from "./routes/discovery.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 
@@ -55,6 +56,7 @@ app.use("/api/clients",   clientsRouter);
 app.use("/api/webhooks",  webhooksRouter);
 app.use("/api/embed",      embedRouter);
 app.use("/api/prospects", prospectsRouter);
+app.use("/api/discovery", discoveryRouter);
 
 // ─── Error Handling ───────────────────────────────────────────────────────────
 app.use(notFound);
