@@ -6,7 +6,12 @@ import axios from 'axios'
 import Cookies from 'js-cookie'
 import PasswordInput from '@/components/PasswordInput'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+const API_URL = (
+  (process.env.NEXT_PUBLIC_API_URL ?? '')
+    .replace(/^﻿/, '')
+    .replace(/\s+/g, '')
+    .replace(/\/$/, '')
+) || 'http://localhost:4000'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -27,10 +32,14 @@ export default function LoginPage() {
       Cookies.set('access_token', data.accessToken, { expires: 1 })
       router.push('/dashboard')
     } catch (err: unknown) {
-      const message =
-        axios.isAxiosError(err) && err.response?.data?.message
-          ? err.response.data.message
-          : 'Invalid email or password.'
+      let message = 'Invalid email or password.'
+      if (axios.isAxiosError(err)) {
+        if (err.response?.data?.message) {
+          message = err.response.data.message
+        } else if (!err.response) {
+          message = 'Cannot reach the server. Check your connection or try again.'
+        }
+      }
       setError(message)
     } finally {
       setLoading(false)
