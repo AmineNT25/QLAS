@@ -13,6 +13,8 @@ const VALID_STATUSES = [
 // GET /api/prospects/stats
 router.get("/stats", async (req, res, next) => {
   try {
+    const orgFilter = { organizationId: req.user.organizationId };
+
     const now = new Date();
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -28,17 +30,18 @@ router.get("/stats", async (req, res, next) => {
       overTime,
       scoreStats,
     ] = await Promise.all([
-      Prospect.countDocuments({}),
-      Prospect.countDocuments({ opportunityScore: { $gte: 70 } }),
-      Prospect.countDocuments({ status: { $ne: "not_contacted" } }),
-      Prospect.countDocuments({ status: "client_won" }),
-      Prospect.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+      Prospect.countDocuments(orgFilter),
+      Prospect.countDocuments({ ...orgFilter, opportunityScore: { $gte: 70 } }),
+      Prospect.countDocuments({ ...orgFilter, status: { $ne: "not_contacted" } }),
+      Prospect.countDocuments({ ...orgFilter, status: "client_won" }),
+      Prospect.countDocuments({ ...orgFilter, createdAt: { $gte: thirtyDaysAgo } }),
       Prospect.aggregate([
+        { $match: orgFilter },
         { $group: { _id: "$status", count: { $sum: 1 } } },
         { $project: { _id: 0, status: "$_id", count: 1 } },
       ]),
       Prospect.aggregate([
-        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $match: { ...orgFilter, createdAt: { $gte: thirtyDaysAgo } } },
         {
           $group: {
             _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
@@ -49,6 +52,7 @@ router.get("/stats", async (req, res, next) => {
         { $project: { _id: 0, date: "$_id", count: 1 } },
       ]),
       Prospect.aggregate([
+        { $match: orgFilter },
         { $group: { _id: null, avg: { $avg: "$opportunityScore" } } },
       ]),
     ]);
@@ -81,20 +85,25 @@ router.get("/stats", async (req, res, next) => {
 // GET /api/prospects/analytics
 router.get("/analytics", async (req, res, next) => {
   try {
+    const orgFilter = { organizationId: req.user.organizationId };
+
     const [byCategory, byCity, scoreDistribution, topProspects, statusCounts] =
       await Promise.all([
         Prospect.aggregate([
+          { $match: orgFilter },
           { $group: { _id: "$category", count: { $sum: 1 } } },
           { $sort: { count: -1 } },
           { $project: { _id: 0, category: "$_id", count: 1 } },
         ]),
         Prospect.aggregate([
+          { $match: orgFilter },
           { $group: { _id: "$city", count: { $sum: 1 } } },
           { $sort: { count: -1 } },
           { $limit: 15 },
           { $project: { _id: 0, city: "$_id", count: 1 } },
         ]),
         Prospect.aggregate([
+          { $match: orgFilter },
           {
             $bucket: {
               groupBy: "$opportunityScore",
@@ -104,11 +113,12 @@ router.get("/analytics", async (req, res, next) => {
             },
           },
         ]),
-        Prospect.find({})
+        Prospect.find(orgFilter)
           .sort({ opportunityScore: -1 })
           .limit(5)
           .lean(),
         Prospect.aggregate([
+          { $match: orgFilter },
           { $group: { _id: "$status", count: { $sum: 1 } } },
           { $project: { _id: 0, status: "$_id", count: 1 } },
         ]),
@@ -144,7 +154,7 @@ router.get("/", async (req, res, next) => {
       noWebsite, search, groupBy, page = "1", limit = "20",
     } = req.query;
 
-    const filter = {};
+    const filter = { organizationId: req.user.organizationId };
     if (city)     filter.city     = { $regex: city, $options: "i" };
     if (category) filter.category = category;
     if (status)   filter.status   = status;
@@ -162,6 +172,8 @@ router.get("/", async (req, res, next) => {
         { city:         { $regex: search, $options: "i" } },
       ];
     }
+
+    const orgFilter = { organizationId: req.user.organizationId };
 
     // groupBy=status — return all prospects bucketed by status
     if (groupBy === "status") {
@@ -187,11 +199,11 @@ router.get("/", async (req, res, next) => {
           .limit(limitNum)
           .lean(),
         Prospect.countDocuments(filter),
-        Prospect.countDocuments({}),
-        Prospect.countDocuments({ opportunityScore: { $gte: 70 } }),
-        Prospect.countDocuments({ status: { $ne: "not_contacted" } }),
-        Prospect.countDocuments({ status: "client_won" }),
-        Prospect.distinct("city"),
+        Prospect.countDocuments(orgFilter),
+        Prospect.countDocuments({ ...orgFilter, opportunityScore: { $gte: 70 } }),
+        Prospect.countDocuments({ ...orgFilter, status: { $ne: "not_contacted" } }),
+        Prospect.countDocuments({ ...orgFilter, status: "client_won" }),
+        Prospect.distinct("city", orgFilter),
       ]);
 
     res.json({
@@ -213,6 +225,7 @@ router.post("/", async (req, res, next) => {
     const { website, ...rest } = req.body;
     const prospect = await new Prospect({
       ...rest,
+      organizationId:   req.user.organizationId,
       website:          website || undefined,
       noWebsite:        !website,
       opportunityScore: 0,
@@ -227,7 +240,10 @@ router.post("/", async (req, res, next) => {
 // GET /api/prospects/:id
 router.get("/:id", async (req, res, next) => {
   try {
-    const prospect = await Prospect.findById(req.params.id).lean();
+    const prospect = await Prospect.findOne({
+      _id:            req.params.id,
+      organizationId: req.user.organizationId,
+    }).lean();
     if (!prospect) return res.status(404).json({ message: "Prospect not found" });
     res.json({ data: prospect });
   } catch (err) {
@@ -242,8 +258,8 @@ router.patch("/:id/status", async (req, res, next) => {
     if (!VALID_STATUSES.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
     }
-    const prospect = await Prospect.findByIdAndUpdate(
-      req.params.id,
+    const prospect = await Prospect.findOneAndUpdate(
+      { _id: req.params.id, organizationId: req.user.organizationId },
       { status },
       { new: true, runValidators: true }
     ).lean();

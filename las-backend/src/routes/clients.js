@@ -90,7 +90,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, parseInt(req.query.limit ?? "20", 10) || 20);
     const skip = (page - 1) * limit;
 
-    const filter = { createdBy: req.user.sub };
+    const filter = { organizationId: req.user.organizationId };
     if (req.query.search) {
       filter.name = { $regex: String(req.query.search), $options: "i" };
     }
@@ -127,8 +127,8 @@ router.get(
   async (req, res, next) => {
     try {
       const client = await Client.findOne({
-        _id: req.params.id,
-        createdBy: req.user.sub,
+        _id:            req.params.id,
+        organizationId: req.user.organizationId,
       }).lean();
       if (!client) return res.status(404).json({ message: "Client not found" });
 
@@ -145,7 +145,8 @@ router.post("/", validate(createClientSchema), async (req, res, next) => {
   try {
     const client = await new Client({
       ...req.body,
-      createdBy: req.user.sub,
+      createdBy:      req.user.sub,
+      organizationId: req.user.organizationId,
     }).save();
     res.status(201).json({ data: client, message: "Client created" });
   } catch (err) {
@@ -161,7 +162,7 @@ router.put(
   async (req, res, next) => {
     try {
       const client = await Client.findOneAndUpdate(
-        { _id: req.params.id, createdBy: req.user.sub },
+        { _id: req.params.id, organizationId: req.user.organizationId },
         req.body,
         { new: true, runValidators: true }
       );
@@ -182,8 +183,8 @@ router.delete(
   async (req, res, next) => {
     try {
       const client = await Client.findOne({
-        _id: req.params.id,
-        createdBy: req.user.sub,
+        _id:            req.params.id,
+        organizationId: req.user.organizationId,
       }).select("_id");
       if (!client) return res.status(404).json({ message: "Client not found" });
 
@@ -225,7 +226,7 @@ router.patch(
       }
 
       const client = await Client.findOneAndUpdate(
-        { _id: req.params.id, createdBy: req.user.sub },
+        { _id: req.params.id, organizationId: req.user.organizationId },
         { $set: setOps },
         { new: true, runValidators: true }
       );

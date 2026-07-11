@@ -1,7 +1,8 @@
-import { Schema, model } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const scrapeJobSchema = new Schema(
   {
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
     query:    { type: String, required: true },
     city:     { type: String, required: true },
     limit:    { type: Number, default: 20 },

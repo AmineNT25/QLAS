@@ -40,6 +40,10 @@ export async function requireClientScope(req, res, next) {
       return res.status(401).json({ message: "Authentication required." });
     }
 
+    if (!req.user.organizationId) {
+      return res.status(403).json({ message: "Account is not associated with an organization." });
+    }
+
     const headerId = req.headers["x-client-id"];
     const cookieId = readCookie(req.headers.cookie, COOKIE_NAME);
     const clientId = (headerId || cookieId || "").trim();
@@ -56,8 +60,8 @@ export async function requireClientScope(req, res, next) {
     }
 
     const client = await Client.findOne({
-      _id: clientId,
-      createdBy: req.user.sub,
+      _id:            clientId,
+      organizationId: req.user.organizationId,
     }).select("_id");
 
     if (!client) {

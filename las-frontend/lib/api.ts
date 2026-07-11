@@ -28,8 +28,6 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-/** Wipes the session everywhere — localStorage and the access-token cookie the
- *  proxy reads — then sends the user back to /login. */
 function clearSession() {
   if (typeof window === 'undefined') return
   localStorage.removeItem('access_token')

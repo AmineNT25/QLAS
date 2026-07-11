@@ -11,7 +11,8 @@ const clientSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     industry: { type: String, trim: true },
     website: { type: String, trim: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    createdBy:      { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
     integrations: {
       meta:     integrationPlatformSchema({ pageId: String, formId: String }),
       google:   integrationPlatformSchema({ customerId: String }),

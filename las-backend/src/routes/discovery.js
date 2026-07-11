@@ -59,7 +59,9 @@ router.post("/scrape", scrapeLimit, async (req, res, next) => {
     }
 
     const { query, city, limit } = parsed.data;
-    const job = await new ScrapeJob({ query, city, limit, status: "processing" }).save();
+    const organizationId = req.user.organizationId;
+
+    const job = await new ScrapeJob({ organizationId, query, city, limit, status: "processing" }).save();
 
     // Respond immediately — do not await the scrape
     res.status(202).json({ jobId: job._id, status: "processing" });
@@ -73,8 +75,9 @@ router.post("/scrape", scrapeLimit, async (req, res, next) => {
         const savedIds = [];
 
         for (const biz of businesses) {
-          // Skip duplicates (same name + city, case-insensitive)
+          // Skip duplicates within this organization (same name + city, case-insensitive)
           const exists = await Prospect.exists({
+            organizationId,
             businessName: { $regex: `^${escapeRegex(biz.businessName)}$`, $options: "i" },
             city:         { $regex: `^${escapeRegex(city)}$`,            $options: "i" },
           });
@@ -85,6 +88,7 @@ router.post("/scrape", scrapeLimit, async (req, res, next) => {
           const category         = mapCategory(biz.rawCategory);
 
           const prospect = await new Prospect({
+            organizationId,
             businessName:     biz.businessName,
             category,
             city,
@@ -129,7 +133,10 @@ router.post("/scrape", scrapeLimit, async (req, res, next) => {
 // ── GET /api/discovery/status/:jobId ─────────────────────────────────────────
 router.get("/status/:jobId", async (req, res, next) => {
   try {
-    const job = await ScrapeJob.findById(req.params.jobId)
+    const job = await ScrapeJob.findOne({
+      _id:            req.params.jobId,
+      organizationId: req.user.organizationId,
+    })
       .populate("prospects")
       .lean();
     if (!job) return res.status(404).json({ message: "Job not found" });
@@ -142,7 +149,7 @@ router.get("/status/:jobId", async (req, res, next) => {
 // ── GET /api/discovery/history ────────────────────────────────────────────────
 router.get("/history", async (req, res, next) => {
   try {
-    const history = await ScrapeJob.find()
+    const history = await ScrapeJob.find({ organizationId: req.user.organizationId })
       .sort({ createdAt: -1 })
       .limit(10)
       .select("query city status found saved skipped createdAt duration")

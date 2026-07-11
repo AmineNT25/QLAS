@@ -10,6 +10,7 @@
     "lint": "eslint src/",
     "seed": "node seed.js",
     "migrate:unset-company": "node scripts/unset-company-fields.js",
+    "migrate:org": "node src/scripts/migrate-organization.js",
     "ensure-admin": "node scripts/ensure-admin.js",
     "test": "vitest",
     "postinstall": "npx playwright install chromium --with-deps"

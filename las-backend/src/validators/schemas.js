@@ -1,6 +1,12 @@
 import { z } from "zod";
 
 // ─── Auth Schemas ─────────────────────────────────────────────────────────────
+export const signupSchema = z.object({
+  email:     z.string().email("Invalid email address"),
+  password:  z.string().min(8, "Password must be at least 8 characters"),
+  full_name: z.string().trim().optional(),
+});
+
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
