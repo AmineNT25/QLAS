@@ -7,7 +7,6 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import leadsRouter from "./routes/leads.js";
 import formsRouter from "./routes/forms.js";
-import authRouter from "./routes/auth.js";
 import statsRouter from "./routes/stats.js";
 import analyticsRouter from "./routes/analytics.js";
 import clientsRouter from "./routes/clients.js";
@@ -47,7 +46,6 @@ app.get("/health", (_req, res) => {
 });
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use("/api/auth",      authRouter);
 app.use("/api/stats",     statsRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/leads",     leadsRouter);

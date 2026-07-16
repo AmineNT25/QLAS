@@ -1,8 +1,7 @@
-import mongoose, { Schema, model } from "mongoose";
+import { Schema, model } from "mongoose";
 
 const prospectSchema = new Schema(
   {
-    organizationId:   { type: mongoose.Schema.Types.ObjectId, ref: "Organization", index: true },
     businessName:     { type: String, required: true, trim: true },
     category:         {
       type: String,

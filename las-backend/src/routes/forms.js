@@ -9,16 +9,27 @@ import {
   formIdParamSchema,
 } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
-import { requireAuth } from "../middleware/auth.js";
-import { requireClientScope } from "../middleware/requireClientScope.js";
 import { scoreLead } from "../services/scoringService.js";
 import { sendEmail } from "../services/emailService.js";
 
 const router = Router();
 
+const OBJECT_ID = /^[a-f\d]{24}$/i;
+
+// Reads X-Client-Id header and attaches req.clientId + req.scoped() helper.
+function clientScope(req, res, next) {
+  const clientId = (req.headers["x-client-id"] || "").trim();
+  if (!clientId || !OBJECT_ID.test(clientId)) {
+    return res.status(400).json({ message: "X-Client-Id header is required." });
+  }
+  req.clientId = clientId;
+  req.scoped = (filter = {}) => ({ ...filter, clientId });
+  next();
+}
+
 // ─── GET /api/forms ───────────────────────────────────────────────────────────
-// Dashboard list — scoped to the active client.
-router.get("/", requireAuth, requireClientScope, async (req, res, next) => {
+// Dashboard list — filtered by active client.
+router.get("/", clientScope, async (req, res, next) => {
   try {
     const forms = await Form.find(req.scoped()).sort({ createdAt: -1 }).lean();
     const formIds = forms.map((f) => f._id);
@@ -42,8 +53,7 @@ router.get("/", requireAuth, requireClientScope, async (req, res, next) => {
 // ─── POST /api/forms ──────────────────────────────────────────────────────────
 router.post(
   "/",
-  requireAuth,
-  requireClientScope,
+  clientScope,
   validate(createFormSchema),
   async (req, res, next) => {
     try {
@@ -59,11 +69,9 @@ router.post(
 );
 
 // ─── GET /api/forms/:id/submissions ───────────────────────────────────────────
-// Scoped: the form must belong to the active client.
 router.get(
   "/:id/submissions",
-  requireAuth,
-  requireClientScope,
+  clientScope,
   validate(formIdParamSchema, "params"),
   async (req, res, next) => {
     try {
@@ -96,8 +104,7 @@ router.get(
 // ─── PATCH /api/forms/:id ─────────────────────────────────────────────────────
 router.patch(
   "/:id",
-  requireAuth,
-  requireClientScope,
+  clientScope,
   validate(formIdParamSchema, "params"),
   validate(updateFormSchema),
   async (req, res, next) => {

@@ -6,7 +6,6 @@ import Form from "../models/Form.js";
 import ScoringRule from "../models/ScoringRule.js";
 import EmailTemplate from "../models/EmailTemplate.js";
 import LeadActivity from "../models/LeadActivity.js";
-import { requireAuth } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import {
   createClientSchema,
@@ -44,10 +43,6 @@ const patchIntegrationsSchema = z.object({
 });
 
 const router = Router();
-
-// Every client query is scoped to the authenticated owner. A "client" *is*
-// the tenant here, so the only safe filter is `createdBy === req.user.sub`.
-router.use(requireAuth);
 
 /**
  * Returns relation counts (leads / forms / scoringRules / emailTemplates)
@@ -90,7 +85,7 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(100, parseInt(req.query.limit ?? "20", 10) || 20);
     const skip = (page - 1) * limit;
 
-    const filter = { organizationId: req.user.organizationId };
+    const filter = {};
     if (req.query.search) {
       filter.name = { $regex: String(req.query.search), $options: "i" };
     }
@@ -126,10 +121,7 @@ router.get(
   validate(clientIdParamSchema, "params"),
   async (req, res, next) => {
     try {
-      const client = await Client.findOne({
-        _id:            req.params.id,
-        organizationId: req.user.organizationId,
-      }).lean();
+      const client = await Client.findById(req.params.id).lean();
       if (!client) return res.status(404).json({ message: "Client not found" });
 
       const counts = await relationCounts([client._id]);
@@ -143,11 +135,7 @@ router.get(
 // ─── POST /api/clients ────────────────────────────────────────────────────────
 router.post("/", validate(createClientSchema), async (req, res, next) => {
   try {
-    const client = await new Client({
-      ...req.body,
-      createdBy:      req.user.sub,
-      organizationId: req.user.organizationId,
-    }).save();
+    const client = await new Client({ ...req.body }).save();
     res.status(201).json({ data: client, message: "Client created" });
   } catch (err) {
     next(err);
@@ -161,8 +149,8 @@ router.put(
   validate(updateClientSchema),
   async (req, res, next) => {
     try {
-      const client = await Client.findOneAndUpdate(
-        { _id: req.params.id, organizationId: req.user.organizationId },
+      const client = await Client.findByIdAndUpdate(
+        req.params.id,
         req.body,
         { new: true, runValidators: true }
       );
@@ -176,16 +164,13 @@ router.put(
 
 // ─── DELETE /api/clients/:id ──────────────────────────────────────────────────
 // Cascades: leads under a deleted client would otherwise be permanently
-// unreachable (no client = never in scope), so dependent records go too.
+// unreachable, so dependent records go too.
 router.delete(
   "/:id",
   validate(clientIdParamSchema, "params"),
   async (req, res, next) => {
     try {
-      const client = await Client.findOne({
-        _id:            req.params.id,
-        organizationId: req.user.organizationId,
-      }).select("_id");
+      const client = await Client.findById(req.params.id).select("_id");
       if (!client) return res.status(404).json({ message: "Client not found" });
 
       const leads = await Lead.find({ clientId: client._id }).select("_id").lean();
@@ -208,8 +193,6 @@ router.delete(
 );
 
 // ─── PATCH /api/clients/:id/integrations ──────────────────────────────────────
-// Saves ad-platform credentials so platform webhooks can be attributed to this
-// client. Only the platforms present in the request body are touched.
 router.patch(
   "/:id/integrations",
   validate(clientIdParamSchema, "params"),
@@ -225,14 +208,13 @@ router.patch(
         }
       }
 
-      const client = await Client.findOneAndUpdate(
-        { _id: req.params.id, organizationId: req.user.organizationId },
+      const client = await Client.findByIdAndUpdate(
+        req.params.id,
         { $set: setOps },
         { new: true, runValidators: true }
       );
       if (!client) return res.status(404).json({ message: "Client not found" });
 
-      // toJSON strips accessTokens before the response is serialised.
       res.json({ data: client, message: "Integrations updated" });
     } catch (err) {
       next(err);

@@ -1,16 +1,19 @@
 import { Router } from "express";
 import mongoose from "mongoose";
 import Lead from "../models/Lead.js";
-import { requireAuth } from "../middleware/auth.js";
-import { requireClientScope } from "../middleware/requireClientScope.js";
 
 const router = Router();
 
-// ─── GET /api/analytics ───────────────────────────────────────────────────────
-// Scoped to the single active client (validated by requireClientScope).
-router.get("/", requireAuth, requireClientScope, async (req, res, next) => {
+const OBJECT_ID = /^[a-f\d]{24}$/i;
+
+// ─── GET /api/analytics — filtered by X-Client-Id header.
+router.get("/", async (req, res, next) => {
   try {
-    const clientId = new mongoose.Types.ObjectId(req.clientId);
+    const rawClientId = (req.headers["x-client-id"] || "").trim();
+    if (!rawClientId || !OBJECT_ID.test(rawClientId)) {
+      return res.status(400).json({ message: "X-Client-Id header is required." });
+    }
+    const clientId = new mongoose.Types.ObjectId(rawClientId);
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);

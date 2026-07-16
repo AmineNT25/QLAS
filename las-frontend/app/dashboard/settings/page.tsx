@@ -287,11 +287,10 @@ function TemplateCard({
   }
 
   function handleSave() {
-    const token   = localStorage.getItem('access_token')
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
     fetch(`${apiBase}/api/settings/outreach-templates`, {
       method:  'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ [`template${number}`]: { subject, body } }),
     }).catch(() => {})
     setSaved(true)
@@ -349,11 +348,10 @@ function OutreachEmailTab() {
   const [senderSaved, setSenderSaved] = useState(false)
 
   async function saveSender(data: SenderFields) {
-    const token   = localStorage.getItem('access_token')
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
     await fetch(`${apiBase}/api/settings/outreach-email`, {
       method:  'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(data),
     }).catch(() => {})
     setSenderSaved(true)
@@ -376,11 +374,10 @@ function OutreachEmailTab() {
     setTesting(true)
     setTestResult(null)
     try {
-      const token   = localStorage.getItem('access_token')
       const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
       const res     = await fetch(`${apiBase}/api/settings/test-email`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ apiKey }),
       })
       setTestResult(res.ok ? 'sent' : 'error')

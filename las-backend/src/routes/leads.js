@@ -11,12 +11,12 @@ import {
   createActivitySchema,
 } from "../validators/schemas.js";
 import { validate } from "../middleware/validate.js";
-import { requireAuth } from "../middleware/auth.js";
-import { requireClientScope } from "../middleware/requireClientScope.js";
 import { scoreLead } from "../services/scoringService.js";
 import { sendEmail } from "../services/emailService.js";
 
 const router = Router();
+
+const OBJECT_ID = /^[a-f\d]{24}$/i;
 
 // ─── POST /api/leads ──────────────────────────────────────────────────────────
 // PUBLIC — this is the ingestion endpoint the embed snippet posts to.
@@ -80,8 +80,19 @@ router.post("/", validate(createLeadSchema), async (req, res, next) => {
   }
 });
 
-// Everything below is dashboard-facing and tenant-isolated.
-router.use(requireAuth, requireClientScope);
+// Reads X-Client-Id header and attaches req.clientId + req.scoped() helper.
+function clientScope(req, res, next) {
+  const clientId = (req.headers["x-client-id"] || "").trim();
+  if (!clientId || !OBJECT_ID.test(clientId)) {
+    return res.status(400).json({ message: "X-Client-Id header is required." });
+  }
+  req.clientId = clientId;
+  req.scoped = (filter = {}) => ({ ...filter, clientId });
+  next();
+}
+
+// Everything below is dashboard-facing and filtered by clientId.
+router.use(clientScope);
 
 // ─── GET /api/leads ───────────────────────────────────────────────────────────
 router.get("/", validate(leadQuerySchema, "query"), async (req, res, next) => {
@@ -89,8 +100,6 @@ router.get("/", validate(leadQuerySchema, "query"), async (req, res, next) => {
     const { page, limit, status, search } = req.query;
     const skip = (page - 1) * limit;
 
-    // clientId is forced from the active scope — a client-supplied one is
-    // intentionally ignored so a tenant cannot read another tenant's leads.
     const filter = req.scoped();
     if (status) filter.status = status;
     if (search) filter.email = { $regex: search, $options: "i" };
@@ -203,7 +212,6 @@ router.post(
 
       const activity = await new LeadActivity({
         leadId: lead._id,
-        userId: req.user?.sub ?? null,
         type: req.body.type,
         description: req.body.description,
       }).save();
