@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LeadsTable, { type Lead } from '@/components/leads/LeadsTable'
 import LeadsFilters from '@/components/leads/LeadsFilters'
@@ -16,6 +16,14 @@ interface ApiResponse {
 }
 
 export default function LeadsPage() {
+  return (
+    <Suspense fallback={<div className="py-16 text-center text-sm text-gray-400">Loading…</div>}>
+      <LeadsContent />
+    </Suspense>
+  )
+}
+
+function LeadsContent() {
   const router = useRouter()
   const params = useSearchParams()
 
